@@ -1,0 +1,6 @@
+.claude/
+*.tgz
+*.dat
+*.fits
+Thumbs.db
+.DS_Store

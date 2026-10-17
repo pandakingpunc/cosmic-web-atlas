@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cosmic Web Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/* Layout: full-bleed WebGL sky; a narrow instrument panel docked top-left; an object card docked bottom-right. Deliberately single dark look (it is space). */
+:root{
+  --sky:#04050a;
+  --panel:rgba(9,11,21,.84);
+  --panel-solid:#0a0c17;
+  --ink:#e8eaf4;
+  --muted:#8b92ad;
+  --rule:rgba(150,162,215,.17);
+  --known:#ffc277;
+  --guess:#7aa2ff;
+  --void:#a3aed0;
+  --zoa:#ff8a66;
+  --us:#7dffb0;
+  --warn:#ff9a7a;
+  --f-display:"Instrument Serif","Iowan Old Style","Times New Roman",serif;
+  --f-body:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--sky);color:var(--ink);font:14px/1.45 var(--f-body);overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#scene{position:fixed;inset:0}
+#scene canvas{display:block;touch-action:none}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--known);outline-offset:2px}
+
+#panel{position:fixed;z-index:5;top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));
+  width:min(312px,calc(100% - 32px));max-height:calc(100% - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  overflow:auto;background:var(--panel);border:1px solid var(--rule);border-radius:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  padding:14px 16px 16px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+#panel header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.eyebrow{font:500 10px/1.3 var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:400 34px/1 var(--f-display);margin:4px 0 0;letter-spacing:.005em}
+h1 em{font-style:italic;color:var(--known)}
+#collapse{background:none;border:1px solid var(--rule);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--muted);cursor:pointer;flex:none}
+#collapse:hover{color:var(--ink)}
+.hbtns{display:flex;align-items:center;gap:6px;flex:none}
+.lang{display:flex}
+.lang button{background:none;border:1px solid var(--rule);padding:4px 6px;font:500 10px/1.2 var(--f-data);letter-spacing:.06em;color:var(--muted);cursor:pointer}
+.lang button:first-child{border-radius:6px 0 0 6px;border-right-width:0}
+.lang button:last-child{border-radius:0 6px 6px 0}
+.lang button:hover{color:var(--ink)}
+.lang button[aria-pressed="true"]{color:#fff;border-color:var(--known);background:rgba(255,194,119,.1)}
+#panelBody{display:flex;flex-direction:column;gap:14px}
+#panel.closed #panelBody{display:none}
+.lede{margin:0;color:#bfc5dc;font-size:13px;text-wrap:pretty}
+.sec{display:flex;flex-direction:column;gap:7px}
+.sec h3{margin:0;font:500 10px/1 var(--f-data);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.scales{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.scales button{background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:6px;padding:6px 2px 5px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;line-height:1.15;text-align:center;min-width:0}
+.scales button small{font:400 9.5px/1 var(--f-data);color:var(--muted)}
+.scales button:hover{border-color:rgba(255,194,119,.5)}
+.scales button.on{border-color:var(--known);background:rgba(255,194,119,.1);color:#fff}
+.readout{font:400 11.5px/1.4 var(--f-data);color:var(--muted);font-variant-numeric:tabular-nums}
+.readout b{color:var(--ink);font-weight:500}
+.legend{display:grid;grid-template-columns:1fr;gap:6px;font-size:12px}
+.legend div{display:flex;gap:9px;align-items:flex-start}
+.legend i{flex:none;width:10px;height:10px;border-radius:50%;margin-top:3px}
+.legend span{color:#c4cae0}
+.legend small{display:block;color:var(--muted);font-size:11px}
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12.5px}
+.layers label{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;min-width:0}
+.layers input{accent-color:var(--known);margin:0}
+.range{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.range input{flex:1;accent-color:var(--known)}
+.note{margin:0;font-size:11px;color:var(--muted);text-wrap:pretty}
+.dataStatus{margin:8px 0 0;font:400 11px/1.4 var(--f-data);color:var(--muted);text-wrap:pretty}
+.dataStatus:empty{display:none}
+.dataStatus button{margin-left:4px}
+
+#info{position:fixed;z-index:6;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  width:min(350px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;box-sizing:border-box;
+  background:var(--panel);border:1px solid var(--rule);border-radius:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:14px 16px 16px}
+#info h2{font:400 26px/1.05 var(--f-display);margin:8px 28px 10px 0;text-wrap:balance}
+#infoClose{position:absolute;top:8px;right:8px;background:none;border:0;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:4px 8px}
+#infoClose:hover{color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:500 10px/1 var(--f-data);letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:4px;border:1px solid var(--rule);color:var(--muted)}
+.chip.c-ok{color:var(--us);border-color:rgba(125,255,176,.35)}
+.chip.c-approx{color:var(--known);border-color:rgba(255,194,119,.4)}
+.chip.c-debated{color:var(--warn);border-color:rgba(255,154,122,.45)}
+.facts{margin:0 0 10px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-family:var(--f-data);font-size:11.5px;font-variant-numeric:tabular-nums;min-width:0}
+#iDesc{margin:0 0 12px;font-size:13px;color:#cdd2e6;text-wrap:pretty}
+.act{background:rgba(255,194,119,.12);border:1px solid rgba(255,194,119,.55);color:#ffe2bb;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12.5px}
+.act:hover{background:rgba(255,194,119,.2)}
+
+#hint{position:fixed;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  font:400 11px/1.3 var(--f-data);color:#6c7392;pointer-events:none;text-align:center;width:max-content;max-width:calc(100% - 32px)}
+#loading{position:fixed;inset:0;display:grid;place-items:center;z-index:9;font:400 italic 22px var(--f-display);color:var(--muted);pointer-events:none}
+
+.lbl{position:relative;padding:1px 0 1px 11px;font:500 11px/1.2 var(--f-body);color:#c9d0ee;white-space:nowrap;cursor:pointer;
+  text-shadow:0 0 3px #000,0 0 8px #000,0 0 14px #000;pointer-events:auto}
+.lbl::before{content:"";position:absolute;left:0;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:currentColor;opacity:.8}
+.lbl:hover,.lbl:focus-visible{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.lbl.major{font-size:12.5px;color:#ffd9a6;font-weight:600}
+.lbl.sc{font:italic 400 15px/1.1 var(--f-display);color:#ffe4bf;letter-spacing:.01em}
+.lbl.sc::before{width:9px;height:1px;margin-top:0;border-radius:0}
+.lbl.void{color:var(--void);font-style:italic;font-weight:400}
+.lbl.void::before{background:none;border:1px solid currentColor;width:4px;height:4px}
+.lbl.far{color:#ffcfa1}
+.lbl.shell{color:#a9b8ff;font-style:italic}
+.lbl.us{color:var(--us);font-weight:600}
+.lbl.zoa{color:var(--zoa);font-style:italic;font-weight:400;opacity:.85}
+.lbl.ring{color:#5f6789;font:400 10px/1 var(--f-data);cursor:default;pointer-events:none}
+.lbl.ring::before{display:none}
+.lbl.lani{font:italic 400 20px/1 var(--f-display);color:#9fd0ff}
+.lbl.lani::before{display:none}
+
+/* arama: kutu + açılır sonuç listesi */
+.sBox{position:relative}
+#searchBox{width:100%;box-sizing:border-box;background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:6px;color:var(--ink);padding:7px 10px;font:400 13px/1.35 var(--f-body)}
+#searchBox::placeholder{color:var(--muted)}
+#searchList{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:3;margin:0;padding:4px;list-style:none;
+  background:var(--panel-solid);border:1px solid var(--rule);border-radius:8px;max-height:min(46vh,320px);overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.sOpt{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:12.5px;min-width:0}
+.sOpt b{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.sOpt small{flex:none;font:400 10.5px/1.2 var(--f-data);color:var(--muted);white-space:nowrap}
+.sOpt:hover{background:rgba(255,255,255,.05)}
+.sOpt[aria-selected="true"]{background:rgba(255,194,119,.13)}
+.sNone{padding:8px 9px;color:var(--muted);font-size:12px}
+
+/* gezinti düğmeleri ve tur kartı */
+.navrow{display:flex;gap:8px;flex-wrap:wrap}
+.navrow .act{flex:1 1 auto}
+.mini{background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12.5px;color:#c4cae0}
+.mini:hover{border-color:rgba(255,255,255,.28);color:var(--ink)}
+.mini:disabled{opacity:.45;cursor:default}
+#tourCard{position:fixed;z-index:7;left:50%;transform:translateX(-50%);bottom:calc(42px + env(safe-area-inset-bottom,0px));
+  width:min(560px,calc(100% - 32px));box-sizing:border-box;background:var(--panel);border:1px solid var(--rule);border-radius:10px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:13px 16px 15px}
+#tourCard h2{font:400 24px/1.05 var(--f-display);margin:6px 0 8px;text-wrap:balance}
+#tourText{margin:0 0 12px;font-size:13px;color:#cdd2e6;text-wrap:pretty}
+.tourNav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#tourEnd{margin-left:auto}
+
+/* klavye kısayolu penceresi */
+#keys{position:fixed;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);width:min(360px,calc(100% - 32px));box-sizing:border-box;
+  background:var(--panel);border:1px solid var(--rule);border-radius:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:16px 18px 18px}
+#keys h2{font:400 24px/1 var(--f-display);margin:6px 28px 12px 0}
+#keysClose{position:absolute;top:8px;right:8px;background:none;border:0;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:4px 8px}
+#keysClose:hover{color:var(--ink)}
+.keysList{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;font-size:12.5px;margin:0}
+.keysList dt{white-space:nowrap}
+.keysList dd{margin:0;color:#c4cae0}
+kbd{font:500 10.5px/1 var(--f-data);border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:3px 5px;background:rgba(255,255,255,.04);color:var(--ink)}
+
+/* bilgi kartı: düğme sırası ve ikincil düğme */
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.act.sub{background:rgba(255,255,255,.04);border-color:var(--rule);color:#c4cae0}
+.act.sub:hover{background:rgba(255,255,255,.09)}
+
+@media (max-width:640px){
+  h1{font-size:28px}
+  #hint{display:none}
+  #info{right:max(16px,env(safe-area-inset-right,0px));max-height:52%}
+  #tourCard{bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:12px 14px 14px}
+  #tourCard h2{font-size:21px}
+  #searchBox{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="scene"></div>
+<div id="loading">Placing galaxies…</div>
+
+<aside id="panel" aria-label="Controls" data-i18n-aria="panelAria">
+  <header>
+    <div>
+      <div class="eyebrow" data-i18n="eyebrow">Supergalactic coordinates · 1 unit = 1 Mpc</div>
+      <h1 data-i18n-html="h1">Cosmic <em>Web</em></h1>
+    </div>
+    <div class="hbtns">
+      <div class="lang" role="group" aria-label="Language" data-i18n-aria="langAria">
+        <button id="langEn" data-l="en" aria-pressed="true">EN</button><button id="langTr" data-l="tr" aria-pressed="false">TR</button>
+      </div>
+      <button id="collapse" aria-expanded="true" aria-controls="panelBody">Hide</button>
+    </div>
+  </header>
+  <div id="panelBody">
+    <p class="lede" data-i18n="lede">The nearby universe, drawn from 43 thousand real galaxies in the 2MASS Redshift Survey. Known clusters, walls and voids farther out sit at their measured positions. Everywhere not yet mapped, including the region behind the Milky Way, is filled with a guess that mimics the statistics of the real web.</p>
+
+    <div class="sec">
+      <h3 data-i18n="hSearch">Search</h3>
+      <div class="sBox">
+        <input id="searchBox" type="text" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-controls="searchList" aria-autocomplete="list" aria-label="Search structures" placeholder="Cluster, wall, void, supercluster…" data-i18n-aria="searchAria" data-i18n-ph="searchPh">
+        <ul id="searchList" role="listbox" aria-label="Search results" data-i18n-aria="resAria" hidden></ul>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3 data-i18n="hScale">Scale</h3>
+      <div class="scales" role="group" aria-label="Choose scale" data-i18n-aria="scaleAria">
+        <button data-s="0"><span data-i18n="sc0">Local Group</span><small>3 Mpc</small></button>
+        <button data-s="1"><span data-i18n="sc1">Local Sheet</span><small>40 Mpc</small></button>
+        <button data-s="2"><span data-i18n="sc2">Laniakea</span><small>250 Mpc</small></button>
+        <button data-s="3"><span data-i18n="sc3">Cosmic web</span><small data-i18n="sc3u">1.3 Gpc</small></button>
+        <button data-s="4"><span data-i18n="sc4">Observable</span><small>28 Gpc</small></button>
+      </div>
+      <div class="readout" id="readout">—</div>
+    </div>
+
+    <div class="sec">
+      <h3 data-i18n="hTour">Tour</h3>
+      <div class="navrow">
+        <button id="tourBtn" class="act">Start tour</button>
+        <button id="shotBtn" class="mini" data-i18n="shot">Save image</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3 data-i18n="hColors">Colors</h3>
+      <div class="legend">
+        <div><i style="background:#fff0d6"></i><span><span data-i18n="lg1">2MRS galaxies</span><small data-i18n="lg1d">43,482 real galaxies; each dot is placed from its redshift.</small></span></div>
+        <div><i style="background:var(--known)"></i><span><span data-i18n="lg2">Measured structures</span><small data-i18n="lg2d">Clusters, walls and distant structures the catalog cannot see: positions from the literature.</small></span></div>
+        <div><i style="background:var(--guess)"></i><span><span data-i18n="lg3">Estimated web</span><small data-i18n="lg3d">Voronoi foam model. The texture is realistic; individual positions are invented.</small></span></div>
+        <div><i style="background:none;border:1px solid var(--void)"></i><span data-i18n="lg4">Voids</span></div>
+        <div><i style="background:var(--zoa);opacity:.7"></i><span><span data-i18n="lg5">Zone of Avoidance</span><small data-i18n="lg5d">The Milky Way's dust hides what lies behind this wedge.</small></span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3 data-i18n="hLayers">Layers</h3>
+      <div class="layers">
+        <label><input type="checkbox" id="tReal" checked> <span data-i18n="l_real">2MRS galaxies</span></label>
+        <label><input type="checkbox" id="tKnown" checked> <span data-i18n="l_known">Measured structures</span></label>
+        <label><input type="checkbox" id="tGuess" checked> <span data-i18n="l_guess">Estimated web</span></label>
+        <label><input type="checkbox" id="tVoids" checked> <span data-i18n="l_voids">Voids</span></label>
+        <label><input type="checkbox" id="tZoa" checked> <span data-i18n="l_zoa">Zone of Avoidance</span></label>
+        <label><input type="checkbox" id="tLani" checked> <span data-i18n="l_lani">Laniakea flow</span></label>
+        <label><input type="checkbox" id="tRings" checked> <span data-i18n="l_rings">Distance rings</span></label>
+        <label><input type="checkbox" id="tLabels" checked> <span data-i18n="l_labels">Labels</span></label>
+        <label><input type="checkbox" id="tRot" checked> <span data-i18n="l_rot">Auto-rotate</span></label>
+      </div>
+      <p class="dataStatus" id="realStatus" role="status"></p>
+      <label class="range" for="bright"><span data-i18n="bright">Brightness</span> <input type="range" id="bright" min="0.3" max="2.5" step="0.05" value="1"></label>
+    </div>
+    <p class="note" data-i18n="note1">Distances are present-day (comoving); H₀ = 70 km/s/Mpc, Ωm = 0.3. The color of distant galaxies shows their redshift. Click a label to open details.</p>
+    <p class="note" data-i18n-html="note2"></p>
+  </div>
+</aside>
+
+<section id="info" hidden aria-live="polite">
+  <button id="infoClose" aria-label="Close" data-i18n-aria="close">×</button>
+  <div class="chips"><span id="iKind" class="chip"></span><span id="iConf" class="chip"></span></div>
+  <h2 id="iName"></h2>
+  <dl class="facts">
+    <dt data-i18n="f_dist">Present distance</dt><dd id="iDist"></dd>
+    <dt data-i18n="f_z">Redshift</dt><dd id="iZ"></dd>
+    <dt data-i18n="f_lb">Light travel</dt><dd id="iLb"></dd>
+    <dt>SGX, SGY, SGZ</dt><dd id="iSG"></dd>
+    <dt data-i18n="f_sky">Sky position</dt><dd id="iSky"></dd>
+    <dt data-i18n="f_gal">Galactic l, b</dt><dd id="iGal"></dd>
+  </dl>
+  <p id="iDesc"></p>
+  <div class="acts">
+    <button id="iFly" class="act" data-i18n="fly">Fly there</button>
+    <button id="iLink" class="act sub">Copy link</button>
+  </div>
+</section>
+
+<section id="tourCard" hidden aria-live="polite" aria-label="Guided tour" data-i18n-aria="tourAria">
+  <div class="eyebrow"><span data-i18n="tourEyebrow">Guided tour</span> · <span id="tourStep"></span></div>
+  <h2 id="tourTitle"></h2>
+  <p id="tourText"></p>
+  <div class="tourNav">
+    <button id="tourPrev" class="mini" data-i18n="tPrev">Back</button>
+    <button id="tourNext" class="act" data-i18n="tNext">Next</button>
+    <button id="tourEnd" class="mini" data-i18n="tEnd">Finish</button>
+  </div>
+</section>
+
+<section id="keys" hidden role="dialog" aria-modal="false" aria-label="Keyboard shortcuts" data-i18n-aria="keysAria">
+  <button id="keysClose" aria-label="Close" data-i18n-aria="close">×</button>
+  <h2 data-i18n="keysTitle">Keyboard shortcuts</h2>
+  <dl class="keysList">
+    <dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd data-i18n="k_scale">Scale buttons</dd>
+    <dt><kbd data-i18n="kSpace">Space</kbd></dt><dd data-i18n="k_rot">Toggle auto-rotate</dd>
+    <dt><kbd>L</kbd></dt><dd data-i18n="k_lab">Toggle labels</dd>
+    <dt><kbd>T</kbd></dt><dd data-i18n="k_tour">Start / end the guided tour</dd>
+    <dt><kbd>/</kbd></dt><dd data-i18n="k_search">Jump to the search box</dd>
+    <dt><kbd>Esc</kbd></dt><dd data-i18n="k_esc">Close search, tour or info card</dd>
+    <dt><kbd>?</kbd></dt><dd data-i18n="k_help">Open / close this window</dd>
+  </dl>
+</section>
+
+<div id="hint" data-i18n="hint">drag: rotate · wheel: zoom · right-click: pan · click a label: details · ? shortcuts</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
+
+const $ = id => document.getElementById(id);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const D2R = Math.PI / 180;
+
+/* ================= dil ================= */
+// varsayılan İngilizce; ?lang=en|tr > localStorage > 'en'
+let lang = 'en';
+try { const q = new URLSearchParams(location.search).get('lang'); if (q === 'en' || q === 'tr') lang = q; else { const v = localStorage.getItem('kozmik-lang'); if (v === 'en' || v === 'tr') lang = v; } } catch (e) {}
+const STR = {
+  en: {
+    title: 'Cosmic Web Atlas', loading: 'Placing galaxies…', panelAria: 'Controls', langAria: 'Language', close: 'Close',
+    eyebrow: 'Supergalactic coordinates · 1 unit = 1 Mpc', h1: 'Cosmic <em>Web</em>', hide: 'Hide', show: 'Show',
+    lede: 'The nearby universe, drawn from 43 thousand real galaxies in the 2MASS Redshift Survey. Known clusters, walls and voids farther out sit at their measured positions. Everywhere not yet mapped, including the region behind the Milky Way, is filled with a guess that mimics the statistics of the real web.',
+    hSearch: 'Search', searchAria: 'Search structures', searchPh: 'Cluster, wall, void, supercluster…', resAria: 'Search results', none: 'No matching structure',
+    hScale: 'Scale', scaleAria: 'Choose scale', sc0: 'Local Group', sc1: 'Local Sheet', sc2: 'Laniakea', sc3: 'Cosmic web', sc3u: '1.3 Gpc', sc4: 'Observable',
+    hTour: 'Tour', tourStart: 'Start tour', tourStop: 'End tour', shot: 'Save image',
+    hColors: 'Colors', lg1: '2MRS galaxies', lg1d: '43,482 real galaxies; each dot is placed from its redshift.',
+    lg2: 'Measured structures', lg2d: 'Clusters, walls and distant structures the catalog cannot see: positions from the literature.',
+    lg3: 'Estimated web', lg3d: 'Voronoi foam model. The texture is realistic; individual positions are invented.',
+    lg4: 'Voids', lg5: 'Zone of Avoidance', lg5d: "The Milky Way's dust hides what lies behind this wedge.",
+    hLayers: 'Layers', l_real: '2MRS galaxies', l_known: 'Measured structures', l_guess: 'Estimated web', l_voids: 'Voids', l_zoa: 'Zone of Avoidance',
+    l_lani: 'Laniakea flow', l_rings: 'Distance rings', l_labels: 'Labels', l_rot: 'Auto-rotate', bright: 'Brightness',
+    note1: 'Distances are present-day (comoving); H₀ = 70 km/s/Mpc, Ωm = 0.3. The color of distant galaxies shows their redshift. Click a label to open details.',
+    note2: 'Galaxy data: Huchra et al. 2012, ApJS 199, 26 (<a href="http://tdc-www.harvard.edu/2mrs/" style="color:var(--known)">2MASS Redshift Survey</a>). The catalog is not stored in this page: your browser downloads it from <a href="https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26" style="color:var(--known)">CDS VizieR</a> and computes the positions. This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10.26093/cds/vizier).',
+    real_loading: 'Downloading 2MRS galaxies from CDS VizieR…', real_ok: n => nf(n) + ' galaxies loaded from CDS VizieR.',
+    real_fail: 'Could not reach CDS VizieR, so the 2MRS galaxies are not shown.', retry: 'Try again',
+    f_dist: 'Present distance', f_z: 'Redshift', f_lb: 'Light travel', f_sky: 'Sky position', f_gal: 'Galactic l, b',
+    lb: x => 'set out ' + x + ' ago', fly: 'Fly there', link: 'Copy link', copied: 'Copied', copyFail: "Couldn't copy",
+    conf_ok: 'measured', conf_approx: 'approximate', conf_debated: 'debated',
+    conft_ok: 'Measured: position and distance come from catalogs or the literature.',
+    conft_approx: 'Approximate: position or distance is only roughly known; simplified in the model.',
+    conft_debated: 'Debated: the structure itself, or its size, is still disputed.',
+    view: 'View scale', lyK: 'thousand light-years', lyM: 'million light-years', lyB: 'billion light-years', yK: 'thousand years', yM: 'million years', yB: 'billion years',
+    tourAria: 'Guided tour', tourEyebrow: 'Guided tour', step: (i, n) => 'stop ' + i + ' of ' + n, tPrev: 'Back', tNext: 'Next', tEnd: 'Finish',
+    keysAria: 'Keyboard shortcuts', keysTitle: 'Keyboard shortcuts', kSpace: 'Space', k_scale: 'Scale buttons', k_rot: 'Toggle auto-rotate', k_lab: 'Toggle labels',
+    k_tour: 'Start / end the guided tour', k_search: 'Jump to the search box', k_esc: 'Close search, tour or info card', k_help: 'Open / close this window',
+    hint: 'drag: rotate · wheel: zoom · right-click: pan · click a label: details · ? shortcuts',
+  },
+  tr: {
+    title: 'Kozmik Ağ Atlası', loading: 'Gökadalar yerleştiriliyor…', panelAria: 'Kontroller', langAria: 'Dil', close: 'Kapat',
+    eyebrow: 'Süpergalaktik koordinatlar · 1 birim = 1 Mpc', h1: 'Kozmik <em>Ağ</em>', hide: 'Gizle', show: 'Aç',
+    lede: "Yakın evren, 2MASS Redshift Survey'deki 43 bin gerçek gökadayla çizildi. Daha uzaktaki bilinen kümeler, duvarlar ve boşluklar ölçülmüş konumlarında. Haritalanmamış her yer, Samanyolu'nun arkası dahil, gerçek ağın istatistiğine benzeyen bir tahminle dolduruldu.",
+    hSearch: 'Ara', searchAria: 'Yapı ara', searchPh: 'Küme, duvar, boşluk, süperküme…', resAria: 'Arama sonuçları', none: 'Eşleşen yapı yok',
+    hScale: 'Ölçek', scaleAria: 'Ölçek seç', sc0: 'Yerel Grup', sc1: 'Yerel Levha', sc2: 'Laniakea', sc3: 'Kozmik ağ', sc3u: '1,3 Gpc', sc4: 'Gözlenebilir',
+    hTour: 'Gezinti', tourStart: 'Turu başlat', tourStop: 'Turu bitir', shot: 'Görüntüyü kaydet',
+    hColors: 'Renkler', lg1: '2MRS gökadaları', lg1d: '43.482 gerçek gökada; her nokta kırmızıya kaymasından yerleştirildi.',
+    lg2: 'Ölçülmüş yapılar', lg2d: 'Kataloğun göremediği kümeler, duvarlar ve uzak yapılar: konumları literatürden.',
+    lg3: 'Tahmini ağ', lg3d: 'Voronoi köpük modeli. Doku gerçekçi, tek tek konumlar uydurma.',
+    lg4: 'Boşluklar', lg5: 'Kaçınma Bölgesi', lg5d: "Samanyolu'nun tozu bu kamanın arkasını gizliyor.",
+    hLayers: 'Katmanlar', l_real: '2MRS gökadaları', l_known: 'Ölçülmüş yapılar', l_guess: 'Tahmini ağ', l_voids: 'Boşluklar', l_zoa: 'Kaçınma bölgesi',
+    l_lani: 'Laniakea akışı', l_rings: 'Mesafe halkaları', l_labels: 'Etiketler', l_rot: 'Otomatik dönüş', bright: 'Parlaklık',
+    note1: 'Mesafeler bugünkü (eş hareketli) uzaklıktır; H₀ = 70 km/s/Mpc, Ωm = 0,3. Uzak gökadaların rengi kırmızıya kaymayı gösterir. Etiketlere tıklayınca ayrıntı açılır.',
+    note2: 'Gökada verisi: Huchra ve diğ. 2012, ApJS 199, 26 (<a href="http://tdc-www.harvard.edu/2mrs/" style="color:var(--known)">2MASS Redshift Survey</a>). Katalog bu sayfada saklanmaz: tarayıcınız onu <a href="https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26" style="color:var(--known)">CDS VizieR</a>\'den indirir ve konumları kendisi hesaplar. Bu çalışmada VizieR katalog erişim aracı kullanılmıştır (CDS, Strazburg, Fransa; doi:10.26093/cds/vizier).',
+    real_loading: '2MRS gökadaları CDS VizieR\'den indiriliyor…', real_ok: n => nf(n) + ' gökada CDS VizieR\'den yüklendi.',
+    real_fail: 'CDS VizieR\'e ulaşılamadı; 2MRS gökadaları gösterilemiyor.', retry: 'Yeniden dene',
+    f_dist: 'Bugünkü uzaklık', f_z: 'Kırmızıya kayma', f_lb: 'Işığın yolculuğu', f_sky: 'Gökteki konum', f_gal: 'Galaktik l, b',
+    lb: x => x + ' önce yola çıktı', fly: 'Oraya uç', link: 'Bağlantıyı kopyala', copied: 'Kopyalandı', copyFail: 'Kopyalanamadı',
+    conf_ok: 'ölçülmüş', conf_approx: 'yaklaşık', conf_debated: 'tartışmalı',
+    conft_ok: 'Ölçülmüş: konum ve uzaklık kataloglardan ya da literatürden alınmıştır.',
+    conft_approx: 'Yaklaşık: konum ya da uzaklık ancak kabaca biliniyor; modelde basitleştirilmiştir.',
+    conft_debated: 'Tartışmalı: yapının kendisi ya da boyutu hâlâ tartışmalıdır.',
+    view: 'Görüş ölçeği', lyK: 'bin ışık yılı', lyM: 'milyon ışık yılı', lyB: 'milyar ışık yılı', yK: 'bin yıl', yM: 'milyon yıl', yB: 'milyar yıl',
+    tourAria: 'Rehberli tur', tourEyebrow: 'Rehberli tur', step: (i, n) => 'durak ' + i + ' / ' + n, tPrev: 'Geri', tNext: 'İleri', tEnd: 'Bitir',
+    keysAria: 'Klavye kısayolları', keysTitle: 'Klavye kısayolları', kSpace: 'Boşluk', k_scale: 'Ölçek düğmeleri', k_rot: 'Otomatik dönüşü aç / kapat', k_lab: 'Etiketleri aç / kapat',
+    k_tour: 'Rehberli turu başlat / bitir', k_search: 'Arama kutusuna git', k_esc: 'Arama, tur ya da bilgi kartını kapat', k_help: 'Bu pencereyi aç / kapat',
+    hint: 'sürükle: döndür · tekerlek: yakınlaş · sağ tık: kaydır · etikete tıkla: bilgi · ? kısayollar',
+  },
+};
+const t = (k, ...a) => { const v = STR[lang][k] ?? STR.en[k] ?? k; return typeof v === 'function' ? v(...a) : v; };
+const KIND_EN = {'gökada': 'galaxy', 'grup': 'group', 'küme': 'cluster', 'süperküme': 'supercluster', 'duvar': 'wall', 'boşluk': 'void', 'yapı': 'structure', 'kuasar grubu': 'quasar group', 'kuasar': 'quasar', 'protoküme': 'protocluster', 'yüzey': 'surface', 'gözlem sınırı': 'observational limit'};
+const kindName = k => lang === 'en' ? KIND_EN[k] || k : k;
+const nm = o => lang === 'en' && o.en && o.en.n ? o.en.n : o.n;      // ad: İngilizce varsa onu, yoksa Türkçe
+const ds = o => lang === 'en' && o.en && o.en.t ? o.en.t : o.t;
+function applyStatic() {
+  document.documentElement.lang = lang; document.title = t('title');
+  $('loading') && ($('loading').textContent = t('loading'));
+  document.querySelectorAll('[data-i18n]').forEach(e => { e.textContent = t(e.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach(e => { e.innerHTML = t(e.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(e => e.setAttribute('aria-label', t(e.dataset.i18nAria)));
+  document.querySelectorAll('[data-i18n-ph]').forEach(e => e.setAttribute('placeholder', t(e.dataset.i18nPh)));
+  $('langEn').setAttribute('aria-pressed', lang === 'en'); $('langTr').setAttribute('aria-pressed', lang === 'tr');
+}
+applyStatic();
+
+/* ================= rastgelelik (tekrarlanabilir) ================= */
+let s0 = 20261016 | 0;
+function rnd() { s0 = (s0 + 0x6D2B79F5) | 0; let t = Math.imul(s0 ^ (s0 >>> 15), 1 | s0);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+function gauss() { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); }
+const gv = s => V(gauss() * s, gauss() * s, gauss() * s);
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function inSphere(R) { let p; do p = V(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1); while (p.lengthSq() > 1); return p.multiplyScalar(R); }
+
+/* ================= kozmoloji: H0=70, Ωm=0.3, Ωr, ΩΛ ================= */
+const CKM = 299792.458, H0 = 70, OM = 0.3, ORAD = 8.5e-5, OL = 1 - OM - ORAD;
+const DH = CKM / H0, TH = 977.79 / H0;          // Mpc, milyar yıl
+const NT = 8000, XMAX = Math.log(1 + 1e5);
+const tabD = new Float64Array(NT + 1), tabT = new Float64Array(NT + 1);
+{
+  const E = z => Math.sqrt(ORAD * (1 + z) ** 4 + OM * (1 + z) ** 3 + OL);
+  const dx = XMAX / NT; let pd = 0, pt = 0;
+  const fD = x => { const z = Math.exp(x) - 1; return (1 + z) / E(z); }, fT = x => 1 / E(Math.exp(x) - 1);
+  for (let i = 1; i <= NT; i++) {
+    const a = (i - 1) * dx, b = i * dx;
+    pd += (fD(a) + fD(b)) * dx / 2; pt += (fT(a) + fT(b)) * dx / 2;
+    tabD[i] = pd * DH; tabT[i] = pt * TH;
+  }
+}
+function tab(arr, z) { const f = Math.log(1 + z) / XMAX * NT, i = Math.min(NT - 1, Math.floor(f)), r = f - i; return arr[i] * (1 - r) + arr[i + 1] * r; }
+const DC = z => tab(tabD, z);                    // eş hareketli uzaklık (Mpc)
+const TL = z => tab(tabT, z);                    // geri bakış zamanı (milyar yıl)
+function zOfD(d) { let lo = 0, hi = NT; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (tabD[m] < d) lo = m; else hi = m; }
+  const r = (d - tabD[lo]) / (tabD[hi] - tabD[lo] || 1); return Math.exp((lo + r) / NT * XMAX) - 1; }
+const HORIZON = tabD[NT];
+
+/* ================= koordinatlar: ekvatoral → galaktik → süpergalaktik ================= */
+const EQ2GAL = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]];
+const gUnit = (l, b) => V(Math.cos(b * D2R) * Math.cos(l * D2R), Math.cos(b * D2R) * Math.sin(l * D2R), Math.sin(b * D2R));
+const SGXg = gUnit(137.37, 0), SGZg = gUnit(47.37, 6.32), SGYg = new THREE.Vector3().crossVectors(SGZg, SGXg);
+const gal2sg = g => V(g.dot(SGXg), g.dot(SGYg), g.dot(SGZg));
+function eq2sg(ra, dec, d) {
+  const e = [Math.cos(dec * D2R) * Math.cos(ra * D2R), Math.cos(dec * D2R) * Math.sin(ra * D2R), Math.sin(dec * D2R)];
+  const g = V(...EQ2GAL.map(r => r[0] * e[0] + r[1] * e[1] + r[2] * e[2]));
+  return gal2sg(g).multiplyScalar(d);
+}
+const GNP = gal2sg(V(0, 0, 1));
+const galB = p => Math.asin(Math.max(-1, Math.min(1, p.dot(GNP) / (p.length() || 1)))) / D2R;
+const GAL2SG = new THREE.Matrix4().set(SGXg.x, SGXg.y, SGXg.z, 0, SGYg.x, SGYg.y, SGYg.z, 0, SGZg.x, SGZg.y, SGZg.z, 0, 0, 0, 0, 1);
+
+/* ================= bilinen nesneler =================
+   d: ölçülmüş uzaklık (Mpc) · z: kırmızıya kayma (uzaklık kozmolojiden) · m: göreli zenginlik
+   lv: etiketin göründüğü ölçek · c: ok / approx / debated */
+const OBJ = {};
+const def = (id, o) => { o.id = id; OBJ[id] = o; return o; };
+const L = [
+  // Yerel Grup
+  ['mw',   {n:'Samanyolu', ra:0, dec:0, d:0, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, t:'Evimiz. Yerel Grup\'un iki büyük sarmalından biri; 100–400 milyar yıldız, ~30 kpc çap.', en:{n:'Milky Way', t:'Our home. One of the two large spirals of the Local Group; 100–400 billion stars, ~30 kpc across.'}}],
+  ['m31',  {n:'Andromeda (M31)', ra:10.68, dec:41.27, d:0.78, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, t:'Yerel Grup\'un en büyük gökadası. Bize ~110 km/s ile yaklaşıyor; birkaç milyar yıl içinde Samanyolu ile birleşmesi bekleniyor. Çapı yaklaşık 220 bin ışık yılı; Hubble 1923\'te içindeki Cepheidlerle onun ayrı bir gökada olduğunu gösterdi.', en:{n:'Andromeda (M31)', t:'The largest galaxy of the Local Group. It is approaching us at ~110 km/s and is expected to merge with the Milky Way within a few billion years. About 220,000 light-years across; in 1923 Hubble used its Cepheids to show it is a separate galaxy.'}}],
+  ['m33',  {n:'Üçgen (M33)', ra:23.46, dec:30.66, d:0.86, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, t:'Yerel Grup\'un üçüncü büyük üyesi; Andromeda\'nın uydusu olabilir. İçindeki NGC 604, yerel evrendeki en büyük yıldız oluşum bölgelerinden biri.', en:{n:'Triangulum (M33)', t:'The third-largest member of the Local Group; possibly a satellite of Andromeda. Its NGC 604 is one of the largest star-forming regions in the local universe.'}}],
+  // Yerel Grup: uydular ve cüce gökadalar
+  ['lmc',  {n:'Büyük Macellan Bulutu', ra:80.89, dec:-69.76, d:.0496, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Samanyolu alt grubu', t:'Samanyolu\'nun en büyük uydusu, Yerel Grup\'un dördüncü büyük gökadası. İçindeki Tarantula Bulutu yerel evrenin en büyük yıldız oluşum bölgesi; 1987\'de burada SN 1987A patladı.', en:{n:'Large Magellanic Cloud', t:'The Milky Way\'s largest satellite and the fourth-largest galaxy of the Local Group. Its Tarantula Nebula is the largest star-forming region in the local universe; SN 1987A exploded here in 1987.'}}],
+  ['smc',  {n:'Küçük Macellan Bulutu', ra:13.19, dec:-72.83, d:.062, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Samanyolu alt grubu', t:'Macellan Bulutları\'nın küçüğü; Büyük Macellan Bulutu\'yla birlikte Samanyolu\'nun çekimi altında. Düzensiz yapılı, gaz ve yıldız oluşumu bol bir gökada.', en:{n:'Small Magellanic Cloud', t:'The smaller of the Magellanic Clouds; bound by the Milky Way\'s gravity together with the Large Magellanic Cloud. An irregular galaxy rich in gas and star formation.'}}],
+  ['sagdeg',{n:'Yay Cüce Gökadası (SagDEG)', ra:283.76, dec:-30.55, d:.026, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Samanyolu alt grubu', t:'1994\'te bulunan cüce gökada; Samanyolu onu gelgit kuvvetiyle parçalıyor. Geriye kalan yıldız akıntısı hâlâ gökadamızın çevresini sarıyor.', en:{n:'Sagittarius Dwarf Galaxy (SagDEG)', t:'A dwarf galaxy discovered in 1994; the Milky Way is tearing it apart with tidal forces. The remaining stellar stream still wraps around our galaxy.'}}],
+  ['n6822', {n:'Barnard\'ın Cüce Gökadası (NGC 6822)', ra:296.23, dec:-14.81, d:.5, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, of:'Yerel Grup', t:'E. E. Barnard\'ın 1884\'te bulduğu düzensiz cüce; nötr hidrojeni bol, yıldız oluşumu sürüyor.', en:{n:'Barnard\'s Galaxy (NGC 6822)', t:'An irregular dwarf found by E. E. Barnard in 1884; rich in neutral hydrogen, with ongoing star formation.'}}],
+  ['ic10', {n:'IC 10', ra:5.07, dec:59.3, d:.75, m:0, k:'gökada', lv:'lg', c:'approx', lbl:1, of:'Yerel Grup', t:'Samanyolu düzleminin arkasında, tozla örtülü olduğu için uzun süre küçük sanıldı. Yerel Grup\'un tek bilinen yıldız patlaması gökadası; Wolf–Rayet yıldızları çok sayıda.', en:{n:'IC 10', t:'Hidden behind the Milky Way\'s plane and veiled by dust, it was long thought to be small. The only known starburst galaxy in the Local Group; Wolf–Rayet stars are numerous.'}}],
+  ['ic1613',{n:'IC 1613', ra:16.2, dec:2.12, d:.73, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, of:'Yerel Grup', t:'1906\'da Max Wolf\'un bulduğu cüce. İçindeki Cepheid ve RR Lyrae değişkenleri, mesafe merdiveninin kalibrasyonunda kullanılıyor.', en:{n:'IC 1613', t:'A dwarf found by Max Wolf in 1906. Its Cepheid and RR Lyrae variables are used to calibrate the distance ladder.'}}],
+  ['wlm',  {n:'WLM (Wolf–Lundmark–Melotte)', ra:.49, dec:-15.46, d:.93, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, of:'Yerel Grup', t:'1909\'da Max Wolf\'un bulduğu, Yerel Grup\'un kenarında tek başına duran cüce gökada.', en:{n:'WLM (Wolf–Lundmark–Melotte)', t:'A dwarf galaxy found by Max Wolf in 1909, standing alone at the edge of the Local Group.'}}],
+  ['leo1d',{n:'Aslan I Cüce Gökadası', ra:152.09, dec:12.31, d:.25, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Samanyolu alt grubu', t:'1950\'de Albert G. Wilson\'ın Palomar Gökyüzü Taraması plakalarında bulduğu cüce; Samanyolu\'nun en uzak uydularından.', en:{n:'Leo I Dwarf Galaxy', t:'A dwarf found by Albert G. Wilson in 1950 on Palomar Sky Survey plates; one of the Milky Way\'s most distant satellites.'}}],
+  ['scds', {n:'Heykeltıraş Cüce Gökadası', ra:15.04, dec:-33.71, d:.086, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Samanyolu alt grubu', t:'1937\'de Harlow Shapley\'nin bulduğu cüce küresel gökada; Samanyolu\'nun ilk keşfedilen uydularından.', en:{n:'Sculptor Dwarf Galaxy', t:'A dwarf spheroidal galaxy found by Harlow Shapley in 1937; one of the first Milky Way satellites to be discovered.'}}],
+  ['fds',  {n:'Fırın Cüce Gökadası', ra:39.97, dec:-34.45, d:.138, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Samanyolu alt grubu', t:'1938\'de bulunan cüce gökada; altı küresel yıldız kümesi taşıyor ve bu kümelerin neden dağılmadığı hâlâ tartışılıyor.', en:{n:'Fornax Dwarf Galaxy', t:'A dwarf galaxy found in 1938; it holds six globular clusters, and why they have not dispersed is still debated.'}}],
+  ['m32',  {n:'M32', ra:10.67, dec:40.87, d:.763, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Andromeda alt grubu', t:'Andromeda\'nın uydusu, nadir bulunan sıkışık eliptik gökadalardan. Dış yıldızlarının büyük kısmını Andromeda\'nın gelgit kuvveti söküp almış olabilir.', en:{n:'M32', t:'A satellite of Andromeda and one of the rare compact ellipticals. Andromeda\'s tidal forces may have stripped away most of its outer stars.'}}],
+  ['m110', {n:'M110 (NGC 205)', ra:10.09, dec:41.69, d:.83, m:0, k:'gökada', lv:'sat', c:'ok', lbl:1, of:'Andromeda alt grubu', t:'Andromeda\'nın en büyük uydularından; M32\'den daha dağınık ve büyük, çevresinde genç yıldız kümeleri var.', en:{n:'M110 (NGC 205)', t:'One of Andromeda\'s largest satellites; more diffuse and larger than M32, with young star clusters around it.'}}],
+  ['and2', {n:'Andromeda II', ra:19.12, dec:33.42, d:.68, m:0, k:'gökada', lv:'lg', c:'ok', lbl:1, of:'Yerel Grup', t:'Van den Bergh\'in 1970–71 Palomar plakalarında bulduğu cüce küresel gökada. M31\'e mi M33\'e mi ait olduğu kesin değil.', en:{n:'Andromeda II', t:'A dwarf spheroidal galaxy found by van den Bergh on 1970–71 Palomar plates. Whether it belongs to M31 or M33 is uncertain.'}}],
+  // Yerel Hacim
+  ['m81',  {n:'M81 Grubu', ra:148.9, dec:69.07, d:3.6, m:.16, k:'grup', lv:'local', c:'ok', lbl:1, t:'En yakın komşu gruplardan. M81 ile M82 kütleçekimsel olarak etkileşiyor; aralarında hidrojen köprüleri var. M81\'in merkezinde ~70 milyon Güneş kütleli bir kara delik bulunuyor.', en:{n:'M81 Group', t:'One of the nearest neighboring groups. M81 and M82 interact gravitationally, with hydrogen bridges between them. M81 has a black hole of ~70 million solar masses at its center.'}}],
+  ['cena', {n:'Erboğa A / M83 Grubu', ra:201.37, dec:-43.02, d:3.8, m:.16, k:'grup', lv:'local', c:'ok', lbl:1, t:'Dev radyo gökadası Erboğa A (NGC 5128) ile sarmal M83 çevresindeki zengin yakın grup.', en:{n:'Centaurus A / M83 Group', t:'A rich nearby group around the giant radio galaxy Centaurus A (NGC 5128) and the spiral M83.'}}],
+  ['scl',  {n:'Heykeltıraş Grubu', ra:11.9, dec:-25.3, d:3.5, m:.12, k:'grup', lv:'local', c:'ok', lbl:1, t:'NGC 253 çevresindeki grup. Yerel Grup\'tan geçen Koma–Heykeltıraş Bulutu\'nun güney ucu.', en:{n:'Sculptor Group', t:'The group around NGC 253. The southern end of the Coma–Sculptor Cloud, which passes through the Local Group.'}}],
+  ['canes',{n:'Av Köpekleri I Bulutu', ra:186, dec:40, d:4.5, m:.1, k:'grup', lv:'local', c:'approx', lbl:1, t:'Yerel Grup\'tan Başak\'a doğru uzanan gevşek gökada bulutu.', en:{n:'Canes Venatici I Cloud', t:'A loose cloud of galaxies stretching from the Local Group toward Virgo.'}}],
+  ['leo1', {n:'Aslan I Grubu (M96)', ra:161.7, dec:11.8, d:10.7, m:.15, k:'grup', lv:'local', c:'ok', lbl:1, t:'M96 ve M105 çevresindeki grup; Aslan Çıkıntısı denen yapının parçası.', en:{n:'Leo I Group (M96)', t:'The group around M96 and M105; part of the structure known as the Leo Spur.'}}],
+  ['m101', {n:'M101 Grubu', ra:210.8, dec:54.35, d:6.9, m:.1, k:'grup', lv:'local', c:'ok', lbl:1, t:'Fırıldak Gökadası M101 ve uyduları.', en:{n:'M101 Group', t:'The Pinwheel Galaxy M101 and its satellites.'}}],
+  ['ursa', {n:'Büyük Ayı Kümesi', ra:178, dec:49, d:18, m:.4, k:'küme', lv:'local', c:'ok', lbl:1, t:'Sarmal ağırlıklı, gevşek bir küme; Başak\'ın kuzey komşusu.', en:{n:'Ursa Major Cluster', t:'A loose, spiral-dominated cluster; the northern neighbor of Virgo.'}}],
+  ['virgo',{n:'Başak Kümesi', ra:187.7, dec:12.39, d:16.5, m:1.25, k:'küme', lv:'local lani', c:'ok', lbl:2, t:'Yerel Süperküme\'nin kalbi: 1.300–2.000 gökada. Merkezindeki dev eliptik M87\'nin kara deliği 2019\'da görüntülendi. Yerel Grup ona doğru ~200 km/s ek hızla düşüyor; kümenin toplam kütlesi ~10¹⁵ Güneş kütlesi.', en:{n:'Virgo Cluster', t:'The heart of the Local Supercluster: 1,300–2,000 galaxies. The black hole of its central giant elliptical M87 was imaged in 2019. The Local Group is falling toward it with an extra ~200 km/s; the cluster\'s total mass is ~10¹⁵ solar masses.'}}],
+  ['fornax',{n:'Fırın Kümesi', ra:54.62, dec:-35.45, d:19, m:.6, k:'küme', lv:'local lani', c:'ok', lbl:1, t:'Güney gökyüzünün en zengin yakın kümesi. Başak\'tan küçük ama merkezi daha yoğun. Merkez gökadası NGC 1399, çevresinde yüzlerce küresel yıldız kümesi barındırıyor.', en:{n:'Fornax Cluster', t:'The richest nearby cluster in the southern sky. Smaller than Virgo but denser at the center. Its central galaxy NGC 1399 hosts hundreds of globular clusters.'}}],
+  ['erid', {n:'Irmak Grubu', ra:54.0, dec:-21, d:23, m:.4, k:'grup', lv:'local', c:'ok', lbl:1, t:'Fırın Kümesi ile birlikte Fırın–Irmak bulutunu oluşturan gökada grubu.', en:{n:'Eridanus Group', t:'A galaxy group that forms the Fornax–Eridanus cloud together with the Fornax Cluster.'}}],
+  ['dorado',{n:'Kılıçbalığı Grubu', ra:65.0, dec:-54.9, d:17.7, m:.3, k:'grup', lv:'local', c:'ok', lbl:1, t:'NGC 1566 ve NGC 1553 çevresindeki güney grubu.', en:{n:'Dorado Group', t:'A southern group around NGC 1566 and NGC 1553.'}}],
+  // Yerel Hacim: Kaçınma Bölgesi'nin arkasındaki komşular ve diğer gruplar
+  ['maffei',{n:'IC 342–Maffei Grubu', ra:40.6, dec:59.6, d:3.1, m:.15, k:'grup', lv:'local', c:'approx', lbl:1, t:'Yerel Grup\'un en yakın komşu grubu: IC 342, Maffei 1 ve Maffei 2. Samanyolu düzleminin hemen arkasında kaldıkları için görünür ışıkta neredeyse görünmezler; "görünmeyen yakın komşular" diye anılırlar. Maffei 1 ve 2, Paolo Maffei\'nin 1968\'deki kızılötesi fotoğraf plakalarında fark edildi.', en:{n:'IC 342–Maffei Group', t:'The Local Group\'s nearest neighboring group: IC 342, Maffei 1 and Maffei 2. Because they lie just behind the plane of the Milky Way, they are almost invisible in visible light and are called the "hidden neighbors". Maffei 1 and 2 were noticed on Paolo Maffei\'s infrared photographic plates in 1968.'}}],
+  ['ic342', {n:'IC 342', ra:56.7, dec:67.9, d:3.3, m:0, k:'gökada', lv:'local', c:'approx', lbl:1, of:'IC 342–Maffei', t:'"Saklı Gökada": parlaklığına rağmen Samanyolu\'nun tozu yüzünden çıplak gözle görülmez. Mesafesi toz nedeniyle belirsiz, kabaca 2,5–3,5 Mpc.', en:{n:'IC 342', t:'The "Hidden Galaxy": despite its brightness, the Milky Way\'s dust keeps it from being seen with the naked eye. Its distance is uncertain because of the dust, roughly 2.5–3.5 Mpc.'}}],
+  ['maffei1',{n:'Maffei 1', ra:40.67, dec:59.6, d:3, m:0, k:'gökada', lv:'local', c:'approx', lbl:0, of:'IC 342–Maffei', t:'Grubun en büyük üyesi dev eliptik gökada; Samanyolu\'nun tozuyla neredeyse tamamen gizli.', en:{n:'Maffei 1', t:'The group\'s largest member, a giant elliptical galaxy almost completely hidden by the Milky Way\'s dust.'}}],
+  ['maffei2',{n:'Maffei 2', ra:40.5, dec:59.6, d:3.1, m:0, k:'gökada', lv:'local', c:'approx', lbl:0, of:'IC 342–Maffei', t:'Maffei 1\'in komşusu sarmal gökada; ışığının kabaca %99\'u Samanyolu tozu tarafından emiliyor.', en:{n:'Maffei 2', t:'A spiral galaxy next to Maffei 1; roughly 99% of its light is absorbed by Milky Way dust.'}}],
+  ['ngc1023',{n:'NGC 1023 Grubu', ra:40.1, dec:39.06, d:11, m:.12, k:'grup', lv:'local', c:'approx', lbl:1, t:'Perseus\'taki çubuklu merceksi NGC 1023 çevresindeki grup. Mesafesi kesin değil (kabaca 10–12 Mpc); NGC 1023, Arp\'ın garip gökadalar atlasında yakınında küçük parçalar olan gökada olarak listelenir.', en:{n:'NGC 1023 Group', t:'The group around the barred lenticular NGC 1023 in Perseus. The distance is uncertain (roughly 10–12 Mpc); NGC 1023 is listed in Arp\'s atlas of peculiar galaxies as a galaxy with small fragments nearby.'}}],
+  ['m104', {n:'Sombrero (M104) Grubu', ra:190, dec:-11.62, d:9.55, m:.1, k:'grup', lv:'local', c:'ok', lbl:1, t:'Şapka Gökadası M104\'ün çevresindeki grup; Başak\'ın güney kenarındaki "Başak II" grup zincirinin parçası. M104, ~15 kpc çapında, kenardan görülen dev toz kuşağı ve parlak şişkin merkeziyle tanınan bir gökada.', en:{n:'Sombrero (M104) Group', t:'The group around the Sombrero Galaxy M104; part of the "Virgo II" chain of groups on Virgo\'s southern edge. M104 is ~15 kpc across, known for its edge-on dust lane and bright central bulge.'}}],
+  ['n2997',{n:'NGC 2997 Grubu (Pompa)', ra:146.41, dec:-31.18, d:12.3, m:.12, k:'grup', lv:'local', c:'approx', lbl:1, t:'Pompa takımyıldızında, yüzü bize dönük büyük sarmal NGC 2997 çevresindeki grup. Merkezinde parlak bir yıldız oluşum halkası var.', en:{n:'NGC 2997 Group (Antlia)', t:'The group around the large face-on spiral NGC 2997 in the constellation Antlia. A bright ring of star formation surrounds its center.'}}],
+  ['col',  {n:'Güvercin Grubu (NGC 1808)', ra:76.93, dec:-37.51, d:12.8, m:.1, k:'grup', lv:'local', c:'ok', lbl:1, t:'Güvercin takımyıldızında NGC 1808 ve NGC 1792\'nin çevresindeki grup; Kılıçbalığı Grubu\'nun uzantısı sayılır. NGC 1808\'de çekirdeğin çevresinde yıldız patlaması ve gaz akışı var.', en:{n:'Columba Group (NGC 1808)', t:'The group around NGC 1808 and NGC 1792 in Columba; considered an extension of the Dorado Group. NGC 1808 has a starburst and gas outflow around its nucleus.'}}],
+  ['leo2', {n:'Aslan II Bulutu', ra:163, dec:16, d:26, m:.2, k:'grup', lv:'local', c:'approx', lbl:1, t:'Başak Kümesi\'nin arkasında, yaklaşık 26 Mpc uzakta duran gökada bulutu: en az 18 grup ve 100\'den fazla büyük gökada. Konumu bu modelde kabaca çizildi.', en:{n:'Leo II Cloud', t:'A cloud of galaxies behind the Virgo Cluster, about 26 Mpc away: at least 18 groups and more than 100 large galaxies. Its position is only roughly drawn in this model.'}}],
+  // Laniakea çekirdeği
+  ['antlia',{n:'Antlia Kümesi', ra:157.5, dec:-35.32, d:40.6, m:.6, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Başak tarafı ile Hydra–Erboğa süperkümesi arasındaki köprüde duran küme.', en:{n:'Antlia Cluster', t:'A cluster on the bridge between the Virgo side and the Hydra–Centaurus Supercluster.'}}],
+  ['hydra',{n:'Hydra Kümesi', ra:159.18, dec:-27.52, d:52, m:.9, k:'küme', lv:'lani', c:'ok', lbl:2, t:'Abell 1060. Hydra–Erboğa süperkümesinin parçası; ~150 parlak gökada. Merkezdeki dev eliptik NGC 3311, kümenin en parlak gökadası.', en:{n:'Hydra Cluster', t:'Abell 1060. Part of the Hydra–Centaurus Supercluster; ~150 bright galaxies. Its central giant elliptical NGC 3311 is the cluster\'s brightest galaxy.'}}],
+  ['cen',  {n:'Erboğa Kümesi', ra:192.2, dec:-41.31, d:49, m:1.1, k:'küme', lv:'lani', c:'ok', lbl:2, t:'Abell 3526. Hydra–Erboğa süperkümesinin en büyük kümesi; Büyük Çekici\'ye akan yapıların başında. Merkez gökadası NGC 4696, çevresinde toz şeritleri taşıyan parlak bir cD gökadası.', en:{n:'Centaurus Cluster', t:'Abell 3526. The largest cluster of the Hydra–Centaurus Supercluster, and among the leading structures flowing toward the Great Attractor. Its central galaxy NGC 4696 is a bright cD galaxy with dust lanes around it.'}}],
+  ['a3574',{n:'Abell 3574', ra:207.3, dec:-30.3, d:68, m:.5, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Hydra–Erboğa', en:{n:'Abell 3574'}}],
+  ['ciza', {n:'CIZA J1324.7−5736', ra:201.18, dec:-57.61, d:81, m:.9, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Samanyolu\'nun tozunun arkasında X-ışını taramasıyla 2000\'lerde bulunan büyük küme; Büyük Çekici bölgesinin parçası.', en:{n:'CIZA J1324.7−5736', t:'A large cluster found in the 2000s in an X-ray survey behind the Milky Way\'s dust; part of the Great Attractor region.'}}],
+  ['norma',{n:'Norma Kümesi · Büyük Çekici', ra:243.59, dec:-60.87, d:68, m:1.8, k:'küme', lv:'lani', c:'ok', lbl:2, t:'Abell 3627 (Gönye takımyıldızında): "Büyük Çekici" denen kütle yoğunlaşmasının merkezine en yakın zengin küme; Laniakea\'daki gökadaların akışı bu bölgeye yönelir. Samanyolu düzleminin hemen arkasında kaldığı için onlarca yıl gizli kaldı, 1996\'da Kraan-Korteweg ve ekibi bu yoğunluğun merkezinin Norma Kümesi olduğunu gösterdi.', en:{n:'Norma Cluster · Great Attractor', t:'Abell 3627 (in the constellation Norma): the rich cluster closest to the center of the mass concentration known as the "Great Attractor"; the flow of galaxies in Laniakea is directed toward this region. Hidden for decades just behind the plane of the Milky Way; in 1996 Kraan-Korteweg and colleagues showed that the center of this concentration is the Norma Cluster.'}}],
+  ['pavo', {n:'Tavus Kümesi', ra:281.8, dec:-63.3, d:60, m:.6, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Abell S805 (Tavus II). Tavus–Hintli süperkümesinin parçası; Büyük Çekici\'ye bağlanan güney kolu.', en:{n:'Pavo Cluster', t:'Abell S805 (Pavo II). Part of the Pavo–Indus Supercluster; a southern arm connecting to the Great Attractor.'}}],
+  ['oph',  {n:'Yılancı Kümesi', ra:258.1, dec:-23.37, z:.028, m:1.1, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Büyük Çekici\'nin arkasında, Samanyolu\'nun yoğun tozunun içinde. X-ışınında gökyüzünün en parlak kümelerinden; Yılancı Süperkümesi\'nin merkezi.', en:{n:'Ophiuchus Cluster', t:'Behind the Great Attractor, inside the dense dust of the Milky Way. One of the brightest clusters in the sky in X-rays; the center of the Ophiuchus Supercluster.'}}],
+  // Perseus–Balık
+  ['perseus',{n:'Perseus Kümesi', ra:49.95, dec:41.51, z:.0179, m:1.5, k:'küme', lv:'lani', c:'ok', lbl:2, t:'Abell 426: X-ışınında gökyüzünün en parlak kümesi. Merkez kara deliğin sıcak gazda açtığı dalgalar, Si bemolden 57 oktav kalın bir "ses" olarak ölçüldü. Merkez gökadası NGC 1275, Perseus A radyo kaynağı olarak da biliniyor.', en:{n:'Perseus Cluster', t:'Abell 426: the brightest cluster in the sky in X-rays. The ripples that the central black hole stirs in the hot gas were measured as a "sound" 57 octaves below B-flat. Its central galaxy NGC 1275 is also known as the radio source Perseus A.'}}],
+  ['a262', {n:'Abell 262', ra:28.19, dec:36.15, z:.0163, m:.8, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Perseus–Balık', en:{n:'Abell 262'}}],
+  ['a347', {n:'Abell 347', ra:36.3, dec:41.9, z:.0187, m:.5, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Perseus–Balık', en:{n:'Abell 347'}}],
+  ['n383', {n:'NGC 383 Grubu', ra:16.85, dec:32.4, z:.017, m:.5, k:'grup', lv:'lani', c:'ok', lbl:0, of:'Perseus–Balık', en:{n:'NGC 383 Group'}}],
+  ['a2634',{n:'Abell 2634', ra:354.6, dec:27.03, z:.0312, m:.7, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Perseus–Balık', en:{n:'Abell 2634'}}],
+  ['a569', {n:'Abell 569', ra:109.1, dec:48.6, z:.0196, m:.4, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Perseus–Balık', en:{n:'Abell 569'}}],
+  ['a400', {n:'Abell 400', ra:44.4, dec:6.0, z:.0244, m:.5, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Perseus–Balık', en:{n:'Abell 400'}}],
+  // Koma / CfA2 Büyük Duvarı / Herkül / Aslan
+  ['coma', {n:'Koma Kümesi', ra:194.95, dec:27.98, z:.0231, m:2.0, k:'küme', lv:'lani', c:'ok', lbl:2, t:'Abell 1656: 1.000\'den fazla gökada. Fritz Zwicky 1933\'te bu kümede karanlık maddenin ilk işaretini buldu. Berenis\'in Saçı takımyıldızında, ~320 milyon ışık yılı uzakta duruyor.', en:{n:'Coma Cluster', t:'Abell 1656: more than 1,000 galaxies. In 1933 Fritz Zwicky found the first sign of dark matter in this cluster. In the constellation Coma Berenices, ~320 million light-years away.'}}],
+  ['leo',  {n:'Aslan Kümesi (A1367)', ra:176.15, dec:19.76, z:.022, m:1.0, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Abell 1367. Koma ile birlikte Koma Süperkümesi\'ni oluşturur; aralarında belirgin bir filaman var.', en:{n:'Leo Cluster (A1367)', t:'Abell 1367. Together with Coma it forms the Coma Supercluster; a distinct filament runs between them.'}}],
+  ['a779', {n:'Abell 779', ra:139.95, dec:33.75, z:.0229, m:.4, k:'küme', lv:'lani', c:'ok', lbl:0, of:'CfA2 Büyük Duvarı', en:{n:'Abell 779'}}],
+  ['a2199',{n:'Abell 2199', ra:247.16, dec:39.55, z:.0302, m:1.0, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Herkül tarafındaki zengin küme; merkezinde dev cD gökadası NGC 6166. CfA2 Büyük Duvarı\'nın doğu ucu.', en:{n:'Abell 2199', t:'A rich cluster on the Hercules side; its center holds the giant cD galaxy NGC 6166. The eastern end of the CfA2 Great Wall.'}}],
+  ['a2197',{n:'Abell 2197', ra:246.9, dec:40.9, z:.0301, m:.6, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Herkül', en:{n:'Abell 2197'}}],
+  ['herc', {n:'Herkül Kümesi', ra:241.3, dec:17.75, z:.0366, m:1.0, k:'küme', lv:'lani', c:'ok', lbl:1, t:'Abell 2151. Herkül Süperkümesi\'nin merkezi; sarmal oranı yüksek, birleşmekte olan düzensiz bir küme.', en:{n:'Hercules Cluster', t:'Abell 2151. The center of the Hercules Supercluster; an irregular, merging cluster with a high spiral fraction.'}}],
+  ['a2147',{n:'Abell 2147', ra:240.57, dec:15.97, z:.035, m:.8, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Herkül', en:{n:'Abell 2147'}}],
+  ['a2052',{n:'Abell 2052', ra:229.2, dec:7.02, z:.0348, m:.7, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Herkül', en:{n:'Abell 2052'}}],
+  ['a1185',{n:'Abell 1185', ra:167.7, dec:28.7, z:.0329, m:.6, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Aslan', en:{n:'Abell 1185'}}],
+  ['a1228',{n:'Abell 1228', ra:170.4, dec:34.3, z:.035, m:.4, k:'küme', lv:'lani', c:'ok', lbl:0, of:'Aslan', en:{n:'Abell 1228'}}],
+  // Vela ve Çoban: Kaçınma Bölgesi'nin arkası ile Çoban Boşluğu'nun kenarı
+  ['vsc0', {n:'Vela Duvarı I', ra:133, dec:-44, z:.058, m:.7, k:'küme', lv:'web', c:'approx', lbl:0, of:'Vela Süperkümesi', t:'Vela Süperkümesi\'nin duvarlarını temsil eden model noktası. Bölgedeki ~20 kümenin çoğu henüz tek tek kataloglanmadığı için konum kabaca.', en:{n:'Vela Wall I', t:'A model point representing the walls of the Vela Supercluster. Most of the ~20 clusters in the region have not yet been cataloged individually, so the position is approximate.'}}],
+  ['vsc1', {n:'Vela Duvarı II', ra:140.7, dec:-50.1, z:.06, m:.7, k:'küme', lv:'web', c:'approx', lbl:0, of:'Vela Süperkümesi', t:'Vela Süperkümesi\'nin merkezini (RA 09h22m, −50°) gösteren model noktası. Konum kabaca.', en:{n:'Vela Wall II', t:'A model point marking the center of the Vela Supercluster (RA 09h22m, −50°). Position approximate.'}}],
+  ['vsc2', {n:'Vela Duvarı III', ra:148, dec:-55, z:.062, m:.7, k:'küme', lv:'web', c:'approx', lbl:0, of:'Vela Süperkümesi', t:'Vela Süperkümesi\'nin güney ucunu gösteren model noktası. Konum kabaca.', en:{n:'Vela Wall III', t:'A model point marking the southern end of the Vela Supercluster. Position approximate.'}}],
+  ['a1795',{n:'Abell 1795', ra:207.25, dec:26.59, z:.0622, m:.8, k:'küme', lv:'web', c:'ok', lbl:1, of:'Çoban Süperkümesi', t:'Çoban Süperkümesi\'nin merkezindeki zengin küme. Merkez gökadasının arkasında, X-ışını ve Hα ışığında görülen ~50 kpc uzunluğunda soğuyan bir gaz izi uzanıyor.', en:{n:'Abell 1795', t:'The rich cluster at the center of the Boötes Supercluster. Behind its central galaxy extends a ~50 kpc cooling gas trail, seen in X-rays and Hα light.'}}],
+  ['a2142',{n:'Abell 2142', ra:239.58, dec:27.23, z:.0909, m:.9, k:'küme', lv:'web', c:'ok', lbl:1, t:'Kuzey Tacı takımyıldızında, iki kümenin birleşmesinden doğan X-ışını parlak küme. Soğuk gaz, çarpışma sırasındaki şokun arkasında kalarak keskin bir sınır oluşturuyor; ~6 milyon ışık yılı genişliğinde, yüzlerce gökada içeriyor.', en:{n:'Abell 2142', t:'An X-ray-bright cluster in Corona Borealis, formed by the merger of two clusters. Cold gas left behind the shock of the collision forms a sharp edge; it spans ~6 million light-years and holds hundreds of galaxies.'}}],
+  ['a1689',{n:'Abell 1689', ra:197.87, dec:-1.34, z:.1832, m:1.1, k:'küme', lv:'web', c:'ok', lbl:1, t:'Güçlü kütleçekimsel mercek: arkasındaki gökadaların ışığını büker ve yaylar halinde uzatır. ~2,3 milyar ışık yılı uzakta; lensleme modellemesi yapılan en zengin kümelerden.', en:{n:'Abell 1689', t:'A strong gravitational lens: it bends the light of the galaxies behind it and stretches it into arcs. ~2.3 billion light-years away; one of the richest clusters used for lensing models.'}}],
+  ['a2029',{n:'Abell 2029', ra:227.73, dec:5.75, z:.0773, m:1, k:'küme', lv:'web', c:'ok', lbl:1, t:'~315 Mpc uzakta, sakin ama dev bir küme; merkezinde bilinen en büyük gökadalardan IC 1101 var. Bu cD gökada, sönük hâlesiyle birlikte milyonlarca ışık yılına yayılır ve küçük gökadaları yutarak büyüdü.', en:{n:'Abell 2029', t:'A quiet but giant cluster ~315 Mpc away; at its center is IC 1101, one of the largest known galaxies. This cD galaxy, with its faint halo, spans millions of light-years and grew by swallowing smaller galaxies.'}}],
+  // Shapley
+  ['a3558',{n:'Abell 3558', ra:202.0, dec:-31.5, z:.048, m:2.6, k:'küme', lv:'web', c:'ok', lbl:1, t:'Shapley Süperkümesi\'nin en büyük kümesi. Yapıya adını veren Harlow Shapley, bölgeyi 1930\'ların güney gökada sayımlarında fark etmişti.', en:{n:'Abell 3558', t:'The largest cluster of the Shapley Supercluster. Harlow Shapley, who gave the structure its name, noticed the region in southern galaxy counts of the 1930s.'}}],
+  ['a3562',{n:'Abell 3562', ra:203.4, dec:-31.67, z:.049, m:.9, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 3562'}}],
+  ['a3556',{n:'Abell 3556', ra:201.0, dec:-31.67, z:.0479, m:.7, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 3556'}}],
+  ['a3560',{n:'Abell 3560', ra:203.1, dec:-33.1, z:.0495, m:.6, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 3560'}}],
+  ['a3571',{n:'Abell 3571', ra:206.87, dec:-32.87, z:.0391, m:1.2, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 3571'}}],
+  ['a3528',{n:'Abell 3528', ra:191.7, dec:-29.0, z:.054, m:.9, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 3528'}}],
+  ['a1736',{n:'Abell 1736', ra:201.7, dec:-27.1, z:.0458, m:.8, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 1736'}}],
+  ['a3532',{n:'Abell 3532', ra:194.3, dec:-30.4, z:.0554, m:.7, k:'küme', lv:'web', c:'ok', lbl:0, of:'Shapley', en:{n:'Abell 3532'}}],
+  // Horologium–Reticulum
+  ['a3266',{n:'Abell 3266', ra:67.8, dec:-61.45, z:.0594, m:1.2, k:'küme', lv:'web', c:'ok', lbl:0, of:'Horologium–Reticulum', en:{n:'Abell 3266'}}],
+  ['a3158',{n:'Abell 3158', ra:55.72, dec:-53.63, z:.059, m:.8, k:'küme', lv:'web', c:'ok', lbl:0, of:'Horologium–Reticulum', en:{n:'Abell 3158'}}],
+  ['a3128',{n:'Abell 3128', ra:52.47, dec:-52.58, z:.06, m:.7, k:'küme', lv:'web', c:'ok', lbl:0, of:'Horologium–Reticulum', en:{n:'Abell 3128'}}],
+  ['a3112',{n:'Abell 3112', ra:49.49, dec:-44.24, z:.075, m:.8, k:'küme', lv:'web', c:'ok', lbl:0, of:'Horologium–Reticulum', en:{n:'Abell 3112'}}],
+  // Balık–Balina
+  ['a85',  {n:'Abell 85', ra:10.46, dec:-9.3, z:.0551, m:1.2, k:'küme', lv:'web', c:'ok', lbl:0, of:'Balık–Balina', en:{n:'Abell 85'}}],
+  ['a133', {n:'Abell 133', ra:15.67, dec:-21.88, z:.0566, m:.7, k:'küme', lv:'web', c:'ok', lbl:0, of:'Balık–Balina', en:{n:'Abell 133'}}],
+  ['a119', {n:'Abell 119', ra:14.07, dec:-1.25, z:.0442, m:.8, k:'küme', lv:'web', c:'ok', lbl:0, of:'Balık–Balina', en:{n:'Abell 119'}}],
+  ['a2670',{n:'Abell 2670', ra:358.56, dec:-10.42, z:.0762, m:.6, k:'küme', lv:'web', c:'ok', lbl:0, of:'Balık–Balina', en:{n:'Abell 2670'}}],
+  // Heykeltıraş
+  ['a2734',{n:'Abell 2734', ra:2.84, dec:-28.85, z:.062, m:.7, k:'küme', lv:'web', c:'ok', lbl:0, of:'Heykeltıraş', en:{n:'Abell 2734'}}],
+  ['a2717',{n:'Abell 2717', ra:0.8, dec:-35.93, z:.049, m:.5, k:'küme', lv:'web', c:'ok', lbl:0, of:'Heykeltıraş', en:{n:'Abell 2717'}}],
+  ['a4059',{n:'Abell 4059', ra:359.25, dec:-34.76, z:.0475, m:.7, k:'küme', lv:'web', c:'ok', lbl:0, of:'Heykeltıraş', en:{n:'Abell 4059'}}],
+  // Kuzey Tacı
+  ['a2065',{n:'Abell 2065', ra:230.62, dec:27.71, z:.0726, m:1.2, k:'küme', lv:'web', c:'ok', lbl:0, of:'Kuzey Tacı', en:{n:'Abell 2065'}}],
+  ['a2061',{n:'Abell 2061', ra:230.3, dec:30.67, z:.0784, m:.8, k:'küme', lv:'web', c:'ok', lbl:0, of:'Kuzey Tacı', en:{n:'Abell 2061'}}],
+  ['a2067',{n:'Abell 2067', ra:230.75, dec:30.9, z:.0739, m:.6, k:'küme', lv:'web', c:'ok', lbl:0, of:'Kuzey Tacı', en:{n:'Abell 2067'}}],
+  ['a2089',{n:'Abell 2089', ra:233.2, dec:28.0, z:.0731, m:.5, k:'küme', lv:'web', c:'ok', lbl:0, of:'Kuzey Tacı', en:{n:'Abell 2089'}}],
+  ['a2092',{n:'Abell 2092', ra:233.3, dec:31.1, z:.067, m:.5, k:'küme', lv:'web', c:'ok', lbl:0, of:'Kuzey Tacı', en:{n:'Abell 2092'}}],
+  // Büyük Ayı
+  ['a1377',{n:'Abell 1377', ra:176.8, dec:55.7, z:.0514, m:.6, k:'küme', lv:'web', c:'ok', lbl:0, of:'Büyük Ayı', en:{n:'Abell 1377'}}],
+  ['a1318',{n:'Abell 1318', ra:173.9, dec:55.0, z:.0564, m:.5, k:'küme', lv:'web', c:'ok', lbl:0, of:'Büyük Ayı', en:{n:'Abell 1318'}}],
+  ['a1291',{n:'Abell 1291', ra:173.0, dec:56.0, z:.0527, m:.5, k:'küme', lv:'web', c:'ok', lbl:0, of:'Büyük Ayı', en:{n:'Abell 1291'}}],
+];
+for (const [id, o] of L) def(id, o);
+// Sloan Büyük Duvarı ve Güney Kutbu Duvarı: yol noktaları
+const SGW = [[150.5,1.5,.0775],[162,1,.078],[172,1.5,.075],[182,-1,.077],[193,-3,.084],[199,-2,.085],[207,-1,.08],[216,2,.079]];
+SGW.forEach(([ra, dec, z], i) => def('sgw' + i, {n:'SGW ' + i, ra, dec, z, m:i === 4 || i === 5 ? .9 : .45, k:'küme', lv:'web', c:'ok', lbl:0}));
+const SPW = [[285,-45,180],[310,-62,170],[345,-78,160],[30,-82,160],[75,-72,170],[105,-55,185],[125,-38,200]];
+SPW.forEach(([ra, dec, d], i) => def('spw' + i, {n:'SPW ' + i, ra, dec, d, m:.35, k:'küme', lv:'web', c:'approx', lbl:0}));
+
+for (const o of Object.values(OBJ)) {
+  o.dist = o.d !== undefined ? o.d : DC(o.z);
+  if (o.z === undefined) o.z = o.dist > 0 ? zOfD(o.dist) : 0;
+  o.p = o.dist > 0 ? eq2sg(o.ra, o.dec, o.dist) : V(0, 0, 0);
+}
+const P = id => OBJ[id].p;
+
+// Bilinen filamanlar: [a, b, genişlik Mpc]
+const KE = [
+  ['mw','m81'],['mw','cena'],['mw','scl'],['mw','canes'],['canes','virgo',1.4],['mw','leo1'],['leo1','virgo',1.2],['m81','m101'],['virgo','ursa'],
+  ['fornax','erid'],['fornax','dorado'],
+  ['mw','ic342',1.2],['ic342','maffei',1],['ngc1023','perseus',1.2],['m104','virgo',1.2],['col','dorado',1.2],['leo2','virgo',1.4],
+  ['virgo','antlia',2],['antlia','hydra'],['antlia','cen'],['hydra','cen',1.6],['cen','a3574'],['cen','ciza'],['ciza','norma',1.8],['cen','norma',2.4],
+  ['norma','pavo',2],['norma','oph',2],['pavo','dorado',2.6],['a3574','a3571',2],
+  ['perseus','a347',1.6],['a347','a262',1.6],['a262','n383',1.6],['n383','a2634',2],['perseus','a569'],['perseus','a400'],
+  ['a779','leo'],['leo','coma',2],['coma','a2199',3.2],['a2199','a2197'],['a2197','herc',2.5],['herc','a2147'],['a2147','a2052',2],['leo','a1185'],['a1185','a1228'],
+  ['a3571','a3558',2],['a3558','a3562'],['a3562','a3560'],['a3558','a3556'],['a3556','a3528',1.8],['a3528','a3532'],['a3558','a1736',1.6],
+  ['a3266','a3158',2],['a3158','a3128'],['a3128','a3112',2],
+  ['a119','a85'],['a85','a133'],['a85','a2670',2],
+  ['a4059','a2717'],['a2717','a2734'],['a2734','a133',2],
+  ['a2065','a2061'],['a2061','a2067'],['a2065','a2089'],['a2061','a2092'],
+  ['a1291','a1318'],['a1318','a1377'],
+  ['pavo','spw0',3],
+  ['vsc0','vsc1',2.5],['vsc1','vsc2',2.5],
+];
+for (let i = 1; i < SGW.length; i++) KE.push(['sgw' + (i - 1), 'sgw' + i, 5.5]);
+for (let i = 1; i < SPW.length; i++) KE.push(['spw' + (i - 1), 'spw' + i, 6]);
+
+// Süperkümeler ve duvarlar: etiket üyelerin ortalamasında
+const mean = ids => ids.reduce((a, id) => a.add(P(id)), V(0, 0, 0)).multiplyScalar(1 / ids.length);
+const SC = [
+  {n:'Hydra–Erboğa Süperkümesi', of:['hydra','cen','antlia','a3574'], lv:'web', c:'ok', t:'Laniakea\'nın yoğun çekirdeği. Hydra, Erboğa ve Antlia kümeleri Büyük Çekici\'ye doğru akan bir kol oluşturur.', en:{n:'Hydra–Centaurus Supercluster', t:'The dense core of Laniakea. The Hydra, Centaurus and Antlia clusters form an arm that flows toward the Great Attractor.'}},
+  {n:'Perseus–Balık Süperkümesi', of:['perseus','a262','a347','n383','a2634'], lv:'web', c:'ok', t:'~75 Mpc uzakta, gökyüzünde 40°\'den uzun gökada zinciri. Yerel Boşluk\'un öbür yakasında; Laniakea\'ya komşu ayrı bir çekim havzası.', en:{n:'Perseus–Pisces Supercluster', t:'About 75 Mpc away, a chain of galaxies spanning more than 40° of sky. It lies on the far side of the Local Void and is a separate basin of attraction next to Laniakea.'}},
+  {n:'Koma Süperkümesi', of:['coma','leo'], lv:'web', c:'ok', t:'Koma ve Aslan (A1367) kümeleri. CfA2 Büyük Duvarı\'nın merkezi; Laniakea\'nın dışında.', en:{n:'Coma Supercluster', t:'The Coma and Leo (A1367) clusters. The center of the CfA2 Great Wall; it lies outside Laniakea.'}},
+  {n:'CfA2 Büyük Duvarı', of:['a779','leo','coma','a2199','herc'], lv:'web', c:'ok', k:'duvar', t:'1989\'da Geller ve Huchra\'nın CfA2 haritasında bulunan, ~200 Mpc uzunluğunda ve ~5 Mpc kalınlığında gökada duvarı. Kozmik ağın ilk kez gözle görülen parçalarından.', en:{n:'CfA2 Great Wall', t:'A wall of galaxies about 200 Mpc long and about 5 Mpc thick, found in 1989 in Geller and Huchra\'s CfA2 map. One of the first parts of the cosmic web to be seen directly.'}},
+  {n:'Herkül Süperkümesi', of:['herc','a2147','a2052'], lv:'web', c:'ok', t:'Abell 2151, 2147 ve 2052 çevresindeki süperküme; CfA2 Büyük Duvarı ile bağlantılı.', en:{n:'Hercules Supercluster', t:'A supercluster around Abell 2151, 2147 and 2052; connected to the CfA2 Great Wall.'}},
+  {n:'Aslan Süperkümesi', of:['a1185','a1228'], lv:'web', c:'approx', t:'Abell 1185 ve 1228 çevresindeki görece küçük süperküme.', en:{n:'Leo Supercluster', t:'A relatively small supercluster around Abell 1185 and 1228.'}},
+  {n:'Vela Süperkümesi', of:['vsc0','vsc1','vsc2'], lv:'web', c:'approx', t:'2016\'da Kraan-Korteweg ve ekibi 2dF ve SALT kırmızıya kaymalarıyla buldu: Kaçınma Bölgesi\'nin arkasında, ~25×20 derecelik alanda uzanan, iki duvardan oluşan ~10¹⁵ Güneş kütlesinde süperküme. Bölgedeki ~20 kümenin çoğu henüz tek tek kataloglanmadığı için bu modelde kabaca çizildi.', en:{n:'Vela Supercluster', t:'Found in 2016 by Kraan-Korteweg and colleagues using 2dF and SALT redshifts: a supercluster of about 10¹⁵ solar masses made of two walls, spanning roughly 25×20 degrees behind the Zone of Avoidance. Most of the ~20 clusters in the region have not yet been cataloged individually, so it is drawn only roughly in this model.'}},
+  {n:'Çoban Süperkümesi', of:['a1795'], lv:'web', c:'approx', t:'Abell 1795\'in merkezde olduğu, Çoban Boşluğu\'nun kıyısındaki süperküme. 2023\'te Tully ve ekibi, merkezinde bu süperkümenin bulunduğu ~155 Mpc yarıçaplı "Ho\'oleilana" adlı bir kabuk bildirdi; Sloan ve CfA büyük duvarlarıyla Herkül kompleksi de bu kabuğun içinde sayılıyor.', en:{n:'Boötes Supercluster', t:'A supercluster centered on Abell 1795, on the edge of the Boötes Void. In 2023 Tully and colleagues reported a shell called "Ho\'oleilana", ~155 Mpc in radius and centered on this supercluster; the Sloan and CfA great walls and the Hercules complex are counted inside it.'}},
+  {n:'Shapley Süperkümesi', of:['a3558','a3562','a3556','a3571','a3528','a1736','a3532','a3560'], lv:'web', c:'ok', big:1, t:'Yerel evrendeki en büyük kütle yoğunlaşması (~10¹⁶ Güneş kütlesi). Laniakea\'yı da içine alan bölgeyi kendine çeker; Yerel Grup\'un CMB\'ye göre ~630 km/s\'lik hızının önemli kısmı buradan gelir.', en:{n:'Shapley Supercluster', t:'The largest concentration of mass in the local universe (~10¹⁶ solar masses). It pulls on the region that includes Laniakea; much of the Local Group\'s ~630 km/s velocity relative to the CMB comes from it.'}},
+  {n:'Horologium–Reticulum Süperkümesi', of:['a3266','a3158','a3128','a3112'], lv:'web', c:'ok', t:'Güney gökyüzünde Saat ve Ağ takımyıldızları yönünde dev süperküme. 2023\'te yapılan bir analiz onun da Laniakea\'dan büyük bir çekim havzası olabileceğini öne sürdü.', en:{n:'Horologium–Reticulum Supercluster', t:'A giant supercluster toward the constellations Horologium and Reticulum in the southern sky. A 2023 analysis suggested it may also be a basin of attraction larger than Laniakea.'}},
+  {n:'Balık–Balina Süperkümesi', of:['a85','a133','a119','a2670'], lv:'web', c:'ok', t:'Abell 85 çevresi. Tully\'nin 1987\'de önerdiği, Laniakea\'yı da kapsayan ~300 Mpc\'lik "Balık–Balina Süperküme Kompleksi"nin adını aldığı bölge.', en:{n:'Pisces–Cetus Supercluster', t:'The region around Abell 85. It gave its name to the ~300 Mpc "Pisces–Cetus Supercluster Complex" proposed by Tully in 1987, which also encompasses Laniakea.'}},
+  {n:'Heykeltıraş Süperkümesi', of:['a2734','a2717','a4059'], lv:'web', c:'ok', t:'Güney galaktik kutbu yönünde; Balık–Balina ile filamanlarla bağlı.', en:{n:'Sculptor Supercluster', t:'Toward the south galactic pole; linked to Pisces–Cetus by filaments.'}},
+  {n:'Kuzey Tacı Süperkümesi', of:['a2065','a2061','a2067','a2089','a2092'], lv:'web', c:'ok', t:'Gökyüzünün en yoğun süperkümelerinden; Abell 2065 merkezde. Çekirdeğinin kütleçekimiyle bağlı olabileceği düşünülüyor.', en:{n:'Corona Borealis Supercluster', t:'One of the densest superclusters in the sky, centered on Abell 2065. The gravity of its core may be holding it together.'}},
+  {n:'Büyük Ayı Süperkümesi', of:['a1291','a1318','a1377'], lv:'web', c:'approx', t:'Abell 1291, 1318 ve 1377 çevresinde, ~230 Mpc uzaklıkta.', en:{n:'Ursa Major Supercluster', t:'Around Abell 1291, 1318 and 1377, at a distance of ~230 Mpc.'}},
+  {n:'Yılancı Süperkümesi', of:['oph'], lv:'web', c:'approx', t:'Büyük Çekici\'nin arkasında, Samanyolu\'nun tozunun içinde yarı gizli kalan süperküme.', en:{n:'Ophiuchus Supercluster', t:'A supercluster behind the Great Attractor, half hidden in the dust of the Milky Way.'}},
+  {n:'Tavus–Hintli Süperkümesi', of:['pavo'], lv:'web', c:'approx', t:'Büyük Çekici\'ye bağlanan güney yapı. Laniakea\'nın parçası.', en:{n:'Pavo–Indus Supercluster', t:'A southern structure connected to the Great Attractor. Part of Laniakea.'}},
+  {n:'Sloan Büyük Duvarı', of:['sgw3','sgw4'], lv:'web', c:'ok', k:'duvar', big:1, t:'2003\'te SDSS ile bulundu: ~420 Mpc (1,37 milyar ışık yılı) uzunluğunda. Tek parça, kütleçekimiyle bağlı bir yapı olmadığı, birkaç süperkümenin hizalanması olduğu düşünülüyor.', en:{n:'Sloan Great Wall', t:'Found in 2003 with SDSS: ~420 Mpc (1.37 billion light-years) long. It is thought not to be a single gravitationally bound structure but an alignment of several superclusters.'}},
+  {n:'Güney Kutbu Duvarı', of:['spw2','spw3'], lv:'web', c:'approx', k:'duvar', t:'2020\'de kozmik akış verileriyle (Cosmicflows-3) haritalandı. Güney gök kutbu boyunca kıvrılan ~420 Mpc\'lik yapı; büyük kısmı Samanyolu\'nun arkasında olduğu için gözden kaçmıştı. Konumu bu modelde kabaca çizildi.', en:{n:'South Pole Wall', t:'Mapped in 2020 with cosmic-flow data (Cosmicflows-3). A ~420 Mpc structure curving around the south celestial pole; it was overlooked because most of it lies behind the Milky Way. Its position is drawn only roughly in this model.'}},
+];
+
+/* ================= boşluklar ================= */
+const shapDir = mean(['a3558','a3562','a3556','a3571']).normalize();
+const VOIDS = [
+  {n:'Yerel Boşluk', c:eq2sg(279.5, 18, 30), r:24, lv:'local lani', conf:'approx', t:'Yerel Grup tam kenarında duruyor. Boşluğun genişlemesi bizi ~260 km/s ile ondan uzağa itiyor; bu itme, Yerel Grup\'un CMB\'ye göre hızının yaklaşık %40\'ını oluşturuyor. 1987\'de Tully ve Fisher\'ın bulduğu boşluk, Samanyolu\'nun merkezi yönünde uzandığı için zor gözleniyor.', en:{n:'Local Void', t:'The Local Group sits right at its edge. The void\'s expansion pushes us away from it at ~260 km/s, which makes up about 40% of the Local Group\'s velocity relative to the CMB. Found by Tully and Fisher in 1987, it is hard to observe because it extends in the direction of the Milky Way\'s center.'}},
+  {n:'Kuzey Yerel Boşluk', c:eq2sg(283, 32, 27), r:20, lv:'local lani', conf:'approx', t:'Yerel Boşluk\'un kuzey kolu. Tully ve ekibinin 2019 haritasında Yerel Boşluk, ince filamanlarla ayrılmış üç sektörden oluşuyor; bu modelde kuzey ve güney kolları ayrı gösteriliyor. Konumu ve yarıçapı kabaca.', en:{n:'Northern Local Void', t:'The northern arm of the Local Void. In Tully and colleagues\' 2019 map the Local Void consists of three sectors separated by thin filaments; this model shows the northern and southern arms separately. Position and radius are approximate.'}},
+  {n:'Güney Yerel Boşluk', c:eq2sg(272, 2, 29), r:20, lv:'local lani', conf:'approx', t:'Yerel Boşluk\'un güney kolu, Samanyolu düzleminin öbür yakasında. Üç sektörün sınırları hâlâ netleşmedi; buradaki konum ve yarıçap kabaca çizildi.', en:{n:'Southern Local Void', t:'The southern arm of the Local Void, on the other side of the Milky Way plane. The boundaries of the three sectors are still not settled; the position and radius here are drawn only roughly.'}},
+  {n:'Heykeltıraş Boşluğu', c:eq2sg(15, -32, 72), r:38, lv:'web', conf:'approx', t:'Yerel Boşluk\'un komşu büyük boşluklarından. 2019\'da Tully ve ekibi, Yerel Boşluk\'tan Heykeltıraş ve Herkül boşluklarına açılan "boşluk geçitleri"ni gösterdi. Merkezi ve yarıçapı bu modelde kabaca çizildi.', en:{n:'Sculptor Void', t:'One of the large voids neighboring the Local Void. In 2019 Tully and colleagues showed "void passages" opening from the Local Void toward the Sculptor and Hercules voids. Its center and radius are drawn only roughly in this model.'}},
+  {n:'Mikroskop Boşluğu', c:eq2sg(300, -40, 95), r:42, lv:'web', conf:'approx', t:'Güney gökyüzünde, Samanyolu\'nun tozunun yakınında kalan seyrek bölge. Geç haritalandığı için sınırları belirsiz; konumu ve yarıçapı bu modelde kabaca.', en:{n:'Microscopium Void', t:'A sparse region in the southern sky, near the Milky Way\'s dust. It was mapped late, so its boundaries are uncertain; its position and radius are rough in this model.'}},
+  {n:'Çoban (Boötes) Boşluğu', c:eq2sg(222.5, 46, 213), r:50, lv:'web', conf:'ok', t:'1981\'de bulundu: ~100 Mpc çapında, içinde yalnızca ~60 gökada bilinen dev küresel boşluk. Ortalama bir bölgede binlerce gökada olurdu.', en:{n:'Boötes Void', t:'Found in 1981: a giant spherical void ~100 Mpc across with only ~60 known galaxies. An average region of that size would hold thousands.'}},
+  {n:'Dev Boşluk (Av Köpekleri)', c:eq2sg(195, 38, DC(.116)), r:140, lv:'web', conf:'debated', t:'AR-Lp 36 olarak da bilinir. 300–400 Mpc çapında olabilir; sınırları ve gerçek boyutu belirsiz.', en:{n:'Giant Void (Canes Venatici)', t:'Also known as AR-Lp 36. It may be 300–400 Mpc across; its boundaries and true size are uncertain.'}},
+  {n:'Dipol İtici', c:shapDir.clone().multiplyScalar(-220), r:70, lv:'web', conf:'approx', t:'2017\'de gökada hızlarından çıkarıldı: Yerel Grup\'u Shapley\'e doğru "iten" düşük yoğunluklu bölge. Bu modelde kabaca Shapley\'nin karşı yönüne konuldu.', en:{n:'Dipole Repeller', t:'Inferred from galaxy velocities in 2017: a low-density region that "pushes" the Local Group toward Shapley. In this model it is placed roughly opposite Shapley.'}},
+  {n:'KBC Boşluğu (Yerel Delik)', c:V(0, 0, 0), r:300, lv:'web', conf:'debated', faint:1, t:'Bizi çevreleyen ~300 Mpc yarıçaplı, ortalamadan %20–30 seyrek bir bölge olabilir. Hubble gerginliğine açıklama olarak öneriliyor; gerçekliği tartışmalı.', en:{n:'KBC Void (Local Hole)', t:'May be a region ~300 Mpc in radius around us that is 20–30% less dense than average. It has been proposed as an explanation for the Hubble tension; its reality is debated.'}},
+  {n:'Irmak Süper Boşluğu', c:eq2sg(48.75, -19.6, DC(.22)), r:275, lv:'far web', conf:'debated', t:'CMB\'deki Soğuk Nokta yönünde, z≈0,2\'de. Soğuk Nokta\'yı tek başına açıklayıp açıklamadığı tartışmalı.', en:{n:'Eridanus Supervoid', t:'In the direction of the CMB Cold Spot, at z≈0.2. Whether it alone explains the Cold Spot is debated.'}},
+];
+
+/* ================= sahne ================= */
+const host = $('scene');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.005, 3e5);
+camera.up.set(0, 0, 1);
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x04050a, 1);
+host.appendChild(renderer.domElement);
+const labelR = new CSS2DRenderer();
+labelR.setSize(innerWidth, innerHeight);
+Object.assign(labelR.domElement.style, {position: 'fixed', top: '0', left: '0', pointerEvents: 'none'});
+host.appendChild(labelR.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 0.4; controls.maxDistance = 9e4; controls.zoomSpeed = 1.3;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+controls.autoRotate = !reduceMotion; controls.autoRotateSpeed = 0.35;
+if (reduceMotion) $('tRot').checked = false;
+
+/* ================= nokta gölgelendiricisi ================= */
+const pointMats = [];
+function pointMat(opt = {}) {
+  const m = new THREE.ShaderMaterial({
+    uniforms: {uScale: {value: 1}, uMinPx: {value: opt.minPx ?? 1.4}, uMaxPx: {value: opt.maxPx ?? 40}, uBright: {value: 1},
+      uGain: {value: opt.gain ?? 1}, uFloor: {value: opt.floor ?? 0.1}},
+    vertexShader: `
+      attribute float size; attribute vec3 color;
+      uniform float uScale, uMinPx, uMaxPx, uBright, uGain, uFloor;
+      varying vec3 vC;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        float px = size * uScale / max(-mv.z, 1e-5);
+        float a = clamp(px / uMinPx, 0.0, 1.0);
+        vC = color * uBright * uGain * mix(uFloor, 1.0, a);
+        gl_PointSize = clamp(px, uMinPx, uMaxPx);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying vec3 vC;
+      void main(){
+        vec2 q = gl_PointCoord * 2.0 - 1.0; float r2 = dot(q, q);
+        if (r2 > 1.0) discard;
+        float f = exp(-r2 * 3.2) - 0.04;
+        gl_FragColor = vec4(vC * max(f, 0.0), 1.0);
+      }`,
+    transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+  });
+  pointMats.push(m); return m;
+}
+class Cloud {
+  constructor() { this.p = []; this.c = []; this.s = []; }
+  add(v, r, g, b, s) { this.p.push(v.x, v.y, v.z); this.c.push(r, g, b); this.s.push(s); }
+  geom() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    g.setAttribute('size', new THREE.Float32BufferAttribute(this.s, 1));
+    return g;
+  }
+  build(mat) { const pts = new THREE.Points(this.geom(), mat); pts.frustumCulled = false; scene.add(pts); return pts; }
+  get n() { return this.s.length; }
+}
+
+/* ================= ölçülmüş yapılar ================= */
+const known = new Cloud();
+const KCOL = (t, k) => { // t: 0 dış, 1 çekirdek
+  const r = 1.0, g = .62 + .3 * t, b = .36 + .45 * t * t; return [r * k, g * k, b * k];
+};
+function addKnown(p, t, k, s) { const [r, g, b] = KCOL(t, k); known.add(p, r, g, b, s); }
+
+// Yerel Grup: büyük gökadalar ve cüceler
+for (const id of ['mw', 'm31', 'm33']) {
+  const big = id === 'm33' ? .6 : 1;
+  for (let i = 0; i < 40; i++) addKnown(P(id).clone().add(gv(.012 * big)), 1, .5, .012 * big);
+}
+for (let i = 0; i < 90; i++) {
+  const host_ = rnd() < .5 ? P('mw') : P('m31');
+  addKnown(host_.clone().add(gv(.12 + .1 * rnd())), .5, .35 + .3 * rnd(), .006);
+}
+// 2MRS'in iyi kapsadığı yerde (≈200 Mpc içi, Samanyolu düzlemi dışı) gerçek gökadalar çizilir;
+// sentetik küme halesi ve filamanlar yalnızca kataloğun göremediği yerler için kalır
+const covered = o => o.dist > 0 && o.dist < 200 && Math.abs(galB(o.p)) > 9;
+// küme halleri
+for (const o of Object.values(OBJ)) {
+  if (!o.m || covered(o)) continue;
+  const n = Math.round(12 + 540 * Math.pow(o.m, 1.25)), sig = .45 + 1.25 * Math.sqrt(o.m);
+  for (let i = 0; i < n; i++) {
+    const off = gv(sig * (rnd() < .7 ? .55 : 1.4)), t = Math.exp(-off.length() / sig);
+    addKnown(o.p.clone().add(off), t, .35 + .65 * rnd(), .18 + .2 * rnd() + .25 * t);
+  }
+}
+// filamanlar
+for (const [a, b, w = 1.25] of KE) {
+  if ((covered(OBJ[a]) || a === 'mw') && covered(OBJ[b])) continue;
+  const A = P(a), B = P(b), len = A.distanceTo(B);
+  const mid = A.clone().add(B).multiplyScalar(.5).add(gv(len * .07));
+  const n = Math.round(len * 10 * (1 + w / 4));
+  for (let i = 0; i < n; i++) {
+    const t = rnd(), u = 1 - t;
+    const p = A.clone().multiplyScalar(u * u).addScaledVector(mid, 2 * u * t).addScaledVector(B, t * t);
+    p.add(gv(w * (.45 + .7 * Math.abs(gauss()))));
+    addKnown(p, .25 * rnd(), .3 + .5 * rnd(), .16 + .16 * rnd());
+  }
+}
+/* ================= 2MRS: 43.482 gerçek gökada =================
+   Huchra ve diğ. 2012, ApJS 199, 26. Katalog bu dosyada yok: ziyaretçinin tarayıcısı
+   CDS VizieR'den (J/ApJS/199/26) 200 ≤ cz ≤ 40.000 km/s olan satırların l, b, Kc ve cz
+   sütunlarını indirir, konumlar burada hesaplanır: galaktik (l, b) yönü × DC(cz/c).
+   Kümelerdeki "Tanrı'nın parmakları" (hız saçılmasından doğan görüş doğrultusundaki uzama)
+   zengin kümelerin çevresinde bastırılır. */
+const real = new Cloud();
+const VIZIER = ['https://vizier.cds.unistra.fr', 'https://vizier.cfa.harvard.edu'];   // ikincisi yedek ayna
+const Q2MRS = '/viz-bin/asu-tsv?-source=J/ApJS/199/26/table3&-out.max=unlimited&-out=GLON,GLAT,Kcmag,cz&cz=200..40000&-out.form=%7C';
+let realState = 'loading';
+function realStatus() {
+  const el = $('realStatus'); if (!el) return;
+  el.textContent = realState === 'ok' ? t('real_ok', real.n) : t(realState === 'fail' ? 'real_fail' : 'real_loading');
+  if (realState === 'fail') {
+    const b = document.createElement('button'); b.className = 'mini'; b.textContent = t('retry');
+    b.onclick = () => load2MRS(); el.append(' ', b);
+  }
+}
+async function fetch2MRS() {
+  let cache = null;
+  try { cache = await caches.open('kozmik-2mrs-v1'); const hit = await cache.match(VIZIER[0] + Q2MRS); if (hit) return await hit.text(); } catch (e) {}
+  for (const host of VIZIER) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 30000);
+    try {
+      const res = await fetch(host + Q2MRS, {signal: ctl.signal});
+      if (!res.ok) continue;
+      const txt = await res.text();
+      try { if (cache) await cache.put(VIZIER[0] + Q2MRS, new Response(txt, {headers: {'Content-Type': 'text/plain'}})); } catch (e) {}
+      return txt;
+    } catch (e) { /* sıradaki aynayı dene */ } finally { clearTimeout(timer); }
+  }
+  throw new Error('VizieR');
+}
+function build2MRS(txt) {
+  const fog = Object.values(OBJ).filter(o => o.m >= .4 && o.dist > 10 && o.dist < 330).map(o => ({u: o.p.clone().normalize(), d: o.dist, rad: 1.2 + 1.6 * Math.sqrt(o.m)}));
+  const p = new THREE.Vector3(), u = new THREE.Vector3();
+  for (const line of txt.split('\n')) {
+    const f = line.split('|');
+    if (f.length < 4) continue;
+    const l = parseFloat(f[0]), b = parseFloat(f[1]), kc = parseFloat(f[2]), cz = parseFloat(f[3]);
+    if (!isFinite(l) || !isFinite(b) || !isFinite(cz)) continue;    // başlık, birim ve çizgi satırları
+    u.copy(gal2sg(gUnit(l, b)));
+    let r = DC(cz / CKM);
+    for (const c of fog) {
+      if (Math.abs(r - c.d) > 25) continue;
+      const sep = c.d * Math.acos(Math.min(1, u.dot(c.u)));
+      if (sep < c.rad) { r = c.d + (r - c.d) * .15; break; }
+    }
+    p.copy(u).multiplyScalar(r);
+    const kb = isFinite(kc) ? Math.max(0, Math.min(1, (11.75 - kc) / 9)) : 0;   // 0: sönük (K=11,75) … 1: çok parlak
+    const t = Math.min(1, kb * 1.6), k = .32 + .68 * t;
+    real.add(p, k, k * (.68 + .22 * t), k * (.42 + .4 * t * t), .22 + .4 * t);
+  }
+}
+async function load2MRS() {
+  realState = 'loading'; realStatus();
+  try {
+    const txt = await fetch2MRS();
+    real.p = []; real.c = []; real.s = [];
+    build2MRS(txt);
+    if (!real.n) throw new Error('empty');
+    const old = realPts.geometry; realPts.geometry = real.geom(); old.dispose();
+    realState = 'ok';
+  } catch (e) { realState = 'fail'; }
+  realStatus();
+}
+
+/* ================= Laniakea ================= */
+const LANI_C = P('norma').clone().multiplyScalar(.55).add(V(0, 4, 0)), LANI_R = V(84, 72, 56);
+const inLani = p => { const q = p.clone().sub(LANI_C).divide(LANI_R); return q.lengthSq() < 1; };
+
+/* ================= uzak (ölçülmüş/aday) yapılar ================= */
+function basis(u) {
+  const a = Math.abs(u.z) < .9 ? V(0, 0, 1) : V(1, 0, 0);
+  const e1 = new THREE.Vector3().crossVectors(u, a).normalize(), e2 = new THREE.Vector3().crossVectors(u, e1);
+  return [e1, e2];
+}
+const FAR = [], farC = new Cloud();
+function farObj(o) {
+  o.dist = DC(o.z); o.p = eq2sg(o.ra, o.dec, o.dist); FAR.push(o);
+  const u = o.p.clone().normalize(), [e1, e2] = basis(u);
+  const col = (k, t = .5) => { const z = o.z; return [k, k * (.6 + .25 * t - .08 * Math.min(z, 2)), k * (.35 + .3 * t - .12 * Math.min(z, 2))]; };
+  const put = (v, k, s, t) => { const [r, g, b] = col(k, t); farC.add(v, r, g, b, s); };
+  if (o.shape === 'blob') {
+    for (let i = 0; i < o.np; i++) put(o.p.clone().addScaledVector(e1, gauss() * o.sz[0]).addScaledVector(e2, gauss() * o.sz[1]).addScaledVector(u, gauss() * o.sz[2]), .25 + .5 * rnd(), o.ps, .2);
+    for (let i = 0; i < (o.nq || 0); i++) put(o.p.clone().addScaledVector(e1, gauss() * o.sz[0]).addScaledVector(e2, gauss() * o.sz[1]).addScaledVector(u, gauss() * o.sz[2]), 1.2, o.qs, 1);
+  } else if (o.shape === 'arc') {
+    for (let i = 0; i < o.np; i++) {
+      const a = (rnd() - .5) * o.len / o.rc;
+      const v = o.p.clone().addScaledVector(e1, Math.sin(a) * o.rc).addScaledVector(e2, (1 - Math.cos(a)) * o.rc - o.rc * .15).add(gv(o.th));
+      put(v, .5 + .5 * rnd(), o.ps, .6);
+    }
+  } else if (o.shape === 'ring') {
+    for (let i = 0; i < o.np; i++) {
+      const a = rnd() * 6.283, rr = o.rr * (1 + gauss() * .06);
+      put(o.p.clone().addScaledVector(e1, Math.cos(a) * rr).addScaledVector(e2, Math.sin(a) * rr).add(gv(o.th)), .5 + .5 * rnd(), o.ps, .6);
+    }
+  } else if (o.shape === 'point') {
+    for (let i = 0; i < 6; i++) put(o.p.clone(), 1.6, o.ps, 1);
+  }
+}
+farObj({n:'Saraswati Süperkümesi', ra:354.4, dec:0.5, z:.28, shape:'blob', sz:[70,50,45], np:1800, ps:6, k:'süperküme', c:'ok', size:350,
+  t:'2017\'de SDSS Stripe 82 verisinde bulundu: ~200 Mpc boyunda, ~2×10¹⁶ Güneş kütlesi. Bilinen en büyük süperkümelerden.', en:{n:'Saraswati Supercluster', t:'Found in 2017 in SDSS Stripe 82 data: ~200 Mpc across, ~2×10¹⁶ solar masses. One of the largest known superclusters.'}});
+farObj({n:'Mermi Kümesi (1E 0657−56)', ra:104.66, dec:-55.95, z:.296, shape:'blob', sz:[2.6,1.9,1.9], np:280, ps:5, k:'küme', c:'ok', size:200,
+  t:'İki kümenin çarpışmasından doğan yapı. X-ışını haritasında sıcak gazların gerisinde kalan "mermi" biçimli alt küme görülüyor; kütle çekimiyle ölçülen karanlık madde ise gazların önünde kaldığı için karanlık maddenin varlığına doğrudan kanıt sayılıyor.', en:{n:'Bullet Cluster (1E 0657−56)', t:'A structure born from the collision of two clusters. In X-rays the "bullet"-shaped subcluster lags behind the hot gas, while the mass measured by gravitational lensing stays ahead of the gas, which is taken as direct evidence for dark matter.'}});
+farObj({n:'Pandora Kümesi (Abell 2744)', ra:3.58, dec:-30.39, z:.308, shape:'blob', sz:[3.4,2.5,2.5], np:340, ps:5, k:'küme', c:'ok', size:220,
+  t:'En az dört küçük kümenin ~350 milyon yıl içinde üst üste binmesiyle oluştu. Gökadalar toplam kütlenin %5\'inden azını oluşturuyor; kalanı sıcak gaz ve karanlık madde.', en:{n:'Pandora\'s Cluster (Abell 2744)', t:'Formed from the overlap of at least four smaller clusters over ~350 million years. Galaxies make up less than 5% of the total mass; the rest is hot gas and dark matter.'}});
+farObj({n:'BOSS Büyük Duvarı', ra:162, dec:52, z:.47, shape:'blob', sz:[220,150,110], np:1800, ps:22, k:'yapı', c:'debated', size:2600,
+  t:'2016\'da SDSS/BOSS verisiyle bulundu: z≈ 0,47\'de, yaklaşık 1 milyar ışık yılı çapında süperküme kompleksi. İki uzun duvar ve birkaç süperkümeden oluşuyor, en az 830 gözlenebilir gökada içeriyor; kütleçekimiyle bağlı tek bir yapı sayılıp sayılamayacağı tartışılıyor. Gökteki konumu kabaca gösterildi.', en:{n:'BOSS Great Wall', t:'Found in 2016 with SDSS/BOSS data: a supercluster complex at z≈0.47, about 1 billion light-years across. It consists of two long walls and several superclusters and contains at least 830 observable galaxies; whether it counts as a single gravitationally bound structure is debated. Its position in the sky is shown only roughly.'}});
+farObj({n:'Anka (Phoenix) Kümesi · SPT-CL J2344−4243', ra:356.18, dec:-42.72, z:.596, shape:'blob', sz:[3,2.2,2.2], np:300, ps:6, k:'küme', c:'ok', size:300,
+  t:'2010\'da Güney Kutbu Teleskobu\'nun Sunyaev–Zeldovich taramasında bulundu. Bilinen en yüksek X-ışını gücüne sahip kümelerden; ~2×10¹⁵ Güneş kütlesinde ve merkezine gaz çökmeye devam ettiği için yıldız oluşumu olağandışı biçimde sürüyor.', en:{n:'Phoenix Cluster · SPT-CL J2344−4243', t:'Found in 2010 in the South Pole Telescope\'s Sunyaev–Zeldovich survey. One of the clusters with the highest known X-ray luminosity; at ~2×10¹⁵ solar masses, gas keeps cooling into its center, so star formation continues at an unusual rate.'}});
+farObj({n:'Dev Yay', ra:212, dec:24, z:.802, shape:'arc', len:1000, rc:900, th:14, np:900, ps:14, k:'yapı', c:'debated', size:2400,
+  t:'2021\'de uzak kuasarların ışığındaki Mg II soğurma çizgileriyle izlendi: ~1 Gpc (3,3 milyar ışık yılı) uzunluğunda gökada yayı. Kozmolojik ilkeyi zorlayacak kadar büyük; gerçekliği tartışılıyor. Gökteki konumu kabaca gösterildi.', en:{n:'Giant Arc', t:'Traced in 2021 through Mg II absorption lines in the light of distant quasars: an arc of galaxies ~1 Gpc (3.3 billion light-years) long. It is large enough to strain the cosmological principle; its reality is debated. Its position in the sky is shown only roughly.'}});
+farObj({n:'Büyük Halka', ra:226, dec:34, z:.802, shape:'ring', rr:200, th:12, np:700, ps:14, k:'yapı', c:'debated', size:1600,
+  t:'2024\'te Dev Yay\'ın yakınında bulunan ~400 Mpc (1,3 milyar ışık yılı) çaplı halka biçimli yapı. Aynı Mg II yöntemiyle; konum kabaca gösterildi.', en:{n:'Big Ring', t:'A ring-shaped structure ~400 Mpc (1.3 billion light-years) across, found in 2024 near the Giant Arc. Found with the same Mg II method; its position is shown only roughly.'}});
+farObj({n:'El Gordo · ACT-CL J0102−4915', ra:15.72, dec:-49.25, z:.87, shape:'blob', sz:[3,2.2,2.2], np:300, ps:7, k:'küme', c:'ok', size:330,
+  t:'2011\'de ACT, Chandra ve VLT ile bulundu: z≈ 0,87\'de, ~2,1×10¹⁵ Güneş kütlesiyle o uzaklıkta bilinen en büyük küme. İki alt küme saatte milyonlarca kilometre hızla çarpışıyor; adı İspanyolcada "şişko" anlamına geliyor.', en:{n:'El Gordo · ACT-CL J0102−4915', t:'Found in 2011 with ACT, Chandra and the VLT: at z≈0.87, with ~2.1×10¹⁵ solar masses it is the largest known cluster at that distance. Two subclusters are colliding at millions of kilometers per hour; the name means "the fat one" in Spanish.'}});
+farObj({n:'Huge-LQG', ra:163, dec:14, z:1.27, shape:'blob', sz:[300,160,95], np:900, nq:73, ps:22, qs:60, k:'kuasar grubu', c:'debated', size:3500,
+  t:'73 kuasardan oluşan ~1,2 Gpc\'lik büyük kuasar grubu (2013). Gerçek bir yapı mı yoksa rastgele dağılımın bir dalgalanması mı, hâlâ tartışılıyor.', en:{n:'Huge-LQG', t:'A large quasar group of 73 quasars, ~1.2 Gpc across (2013). Whether it is a real structure or a fluctuation of a random distribution is still debated.'}});
+farObj({n:'Clowes–Campusano LQG', ra:161.75, dec:5, z:1.28, shape:'blob', sz:[160,90,80], np:300, nq:34, ps:22, qs:55, k:'kuasar grubu', c:'ok', size:2000,
+  t:'1991\'de bulunan 34 kuasarlık grup; Huge-LQG\'nin gökte hemen yanında.', en:{n:'Clowes–Campusano LQG', t:'A group of 34 quasars found in 1991; right next to Huge-LQG on the sky.'}});
+farObj({n:'Herkül–Kuzey Tacı Büyük Duvarı', ra:240, dec:38, z:1.85, shape:'blob', sz:[750,550,220], np:2600, nq:15, ps:34, qs:110, k:'duvar', c:'debated', size:7000,
+  t:'Gama ışını patlamalarının gökyüzünde kümelenmesinden çıkarıldı (2013): ~3 Gpc (10 milyar ışık yılı). Bilinen en büyük yapı adayı; patlama sayısı az olduğu için varlığı tartışmalı.', en:{n:'Hercules–Corona Borealis Great Wall', t:'Inferred from the clustering of gamma-ray bursts in the sky (2013): ~3 Gpc (10 billion light-years). The largest candidate structure known; its existence is debated because the number of bursts is small.'}});
+farObj({n:'Örümcek Ağı Protokümesi', ra:175.2, dec:-26.49, z:2.156, shape:'blob', sz:[6,5,8], np:520, ps:12, k:'protoküme', c:'ok', size:520,
+  t:'Evren ~3 milyar yaşındayken oluşmakta olan küme. Merkezdeki "Örümcek Gökadası", civardaki küçük gökadaların birleşmesiyle büyüyor.', en:{n:'Spiderweb Protocluster', t:'A cluster in formation when the universe was ~3 billion years old. The central "Spiderweb Galaxy" is growing by merging with small galaxies around it.'}});
+farObj({n:'Hyperion Proto-süperkümesi', ra:150.0, dec:2.4, z:2.45, shape:'blob', sz:[25,25,40], np:500, ps:12, k:'süperküme', c:'ok', size:600,
+  t:'Evren ~2,3 milyar yaşındayken oluşmakta olan dev yapı (z≈2,45, 2018). Bugün Shapley benzeri bir süperkümeye dönüşmüş olmalı.', en:{n:'Hyperion Proto-supercluster', t:'A giant structure in formation when the universe was ~2.3 billion years old (z≈2.45, 2018). It must have grown into a Shapley-like supercluster by today.'}});
+farObj({n:'SPT2349−56 Protokümesi', ra:357.45, dec:-56.63, z:4.304, shape:'blob', sz:[3,3,5], np:420, ps:13, k:'protoküme', c:'ok', size:480,
+  t:'ALMA ile birleşmekte olan 14 gökada bulundu; üye sayısının ~30 olduğu düşünülüyor. 2026\'da bu protokümedeki sıcak gaz Sunyaev–Zeldovich etkisiyle saptandı: o yaştaki bir kümenin bu kadar erken bir araya gelmesi, modeller için zorlu bir örnek.', en:{n:'SPT2349−56 Protocluster', t:'ALMA found 14 merging galaxies; the number of members is thought to be ~30. In 2026 hot gas in this protocluster was detected through the Sunyaev–Zeldovich effect: a cluster assembling this early is a challenging case for models.'}});
+farObj({n:'Kuasar J0313−1806', ra:48.43, dec:-18.11, z:7.64, shape:'point', ps:75, k:'kuasar', c:'ok', size:2500,
+  t:'2021\'de bulunan, o dönem bilinen en uzak kuasar. Merkezindeki kara delik ~1,6 milyar Güneş kütlesinde; evren yalnızca ~670 milyon yaşındayken bu kütleye ulaşmış olması, kara deliklerin nasıl oluştuğu sorusunu canlı tutuyor.', en:{n:'Quasar J0313−1806', t:'Found in 2021, the most distant quasar known at the time. Its central black hole has ~1.6 billion solar masses; having reached this mass when the universe was only ~670 million years old keeps the question of how black holes formed alive.'}});
+farObj({n:'GN-z11', ra:189.11, dec:62.24, z:10.6, shape:'point', ps:85, k:'gökada', c:'ok', size:2600,
+  t:'2015\'te Hubble buldu; 2023\'te JWST kırmızıya kaymasını z = 10,60 olarak doğruladı: evren ~400 milyon yaşındaydı. 2024\'te içinde bilinen en eski kara delik (~1,6 milyon Güneş kütlesi) keşfedildi.', en:{n:'GN-z11', t:'Found by Hubble in 2015; in 2023 JWST confirmed its redshift as z = 10.60, when the universe was ~400 million years old. In 2024 the oldest known black hole (~1.6 million solar masses) was discovered in it.'}});
+farObj({n:'JADES-GS-z14-0', ra:53.08, dec:-27.86, z:14.32, shape:'point', ps:90, k:'gökada', c:'ok', size:3000,
+  t:'JWST\'nin 2024\'te doğruladığı, evren ~300 milyon yaşındayken var olan gökada. 2025\'te MoM-z14 (z≈14,44) rekoru devraldı.', en:{n:'JADES-GS-z14-0', t:'A galaxy confirmed by JWST in 2024, existing when the universe was ~300 million years old. In 2025 MoM-z14 (z≈14.44) took the record.'}});
+farObj({n:'MoM-z14', ra:150.09, dec:2.27, z:14.44, shape:'point', ps:95, k:'gökada', c:'ok', size:2800,
+  t:'JWST 16 Mayıs 2025\'te görüntüledi: evren ~280 milyon yaşındayken var olan, yaklaşık 240 ışık yılı boyundaki küçük ama parlak gökada. Rekoru bir önceki sahibi JADES-GS-z14-0\'dan devraldı.', en:{n:'MoM-z14', t:'Imaged by JWST on 16 May 2025: a small but bright galaxy about 240 light-years across, existing when the universe was ~280 million years old. It took the record from the previous holder, JADES-GS-z14-0.'}});
+
+/* ================= tahmini ağ: Voronoi köpük modeli ================= */
+const RW = 640, SP = 40;
+function grid(flat, cell, R) {
+  const n = flat.length / 3, dim = Math.ceil(2 * R / cell) + 1;
+  const ci = v => Math.min(dim - 1, Math.max(0, Math.floor((v + R) / cell)));
+  const key = new Int32Array(n), cnt = new Int32Array(dim * dim * dim + 1);
+  for (let i = 0; i < n; i++) { const k = (ci(flat[3 * i]) * dim + ci(flat[3 * i + 1])) * dim + ci(flat[3 * i + 2]); key[i] = k; cnt[k + 1]++; }
+  for (let i = 1; i < cnt.length; i++) cnt[i] += cnt[i - 1];
+  const items = new Int32Array(n), fill = cnt.slice();
+  for (let i = 0; i < n; i++) items[fill[key[i]]++] = i;
+  return {flat, dim, ci, start: cnt, items};
+}
+function nearest(g, x, y, z, k, rad, outD, outI) {
+  for (let i = 0; i < k; i++) { outD[i] = 1e18; outI[i] = -1; }
+  const cx = g.ci(x), cy = g.ci(y), cz = g.ci(z), f = g.flat, dim = g.dim;
+  for (let a = Math.max(0, cx - rad); a <= Math.min(dim - 1, cx + rad); a++)
+  for (let b = Math.max(0, cy - rad); b <= Math.min(dim - 1, cy + rad); b++)
+  for (let c = Math.max(0, cz - rad); c <= Math.min(dim - 1, cz + rad); c++) {
+    const cell = (a * dim + b) * dim + c;
+    for (let q = g.start[cell]; q < g.start[cell + 1]; q++) {
+      const j = g.items[q], dx = f[3 * j] - x, dy = f[3 * j + 1] - y, dz = f[3 * j + 2] - z, d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= outD[k - 1]) continue;
+      let s = k - 1; while (s > 0 && outD[s - 1] > d2) { outD[s] = outD[s - 1]; outI[s] = outI[s - 1]; s--; }
+      outD[s] = d2; outI[s] = j;
+    }
+  }
+  for (let i = 0; i < k; i++) outD[i] = Math.sqrt(outD[i]);
+}
+const voidHit = (p, f = 1) => { for (const v of VOIDS) if (!v.faint && p.distanceTo(v.c) < v.r * f) return v; return null; };
+const knownList = Object.values(OBJ).filter(o => o.m && o.dist < RW);
+const nearKnown = (p, r) => { for (const o of knownList) if (p.distanceToSquared(o.p) < r * r) return true; return false; };
+// tahmin ağırlığı: yakında az (bildiklerimiz baskın), kenarda söner
+// tahmin ağırlığı: 2MRS kapsamında az, Samanyolu düzleminin arkasında (kimse görmüyor) yüksek, kenarda söner
+const wGuess = p => { const r = p.length(), hid = 1 - smooth(6, 12, Math.abs(galB(p)));
+  return Math.max(.1 + .9 * smooth(130, 300, r), .85 * hid) * (1 - smooth(RW - 110, RW, r)); };
+
+// boşluk tohumları
+const seedF = [];
+const nSeeds = Math.round(4 / 3 * Math.PI * (RW + SP) ** 3 / SP ** 3);
+for (let i = 0; i < nSeeds; i++) { const p = inSphere(RW + SP); if (voidHit(p, 1.5)) continue; seedF.push(p.x, p.y, p.z); }
+for (const v of VOIDS) if (!v.faint && v.c.length() < RW + v.r) seedF.push(v.c.x, v.c.y, v.c.z);
+const SG = grid(new Float32Array(seedF), SP, RW + SP + 2);
+const dd = new Float64Array(4), ii = new Int32Array(4);
+
+// düğümler: Voronoi kenarlarına yakın noktalar (3 tohuma neredeyse eşit uzak)
+const nodes = []; // {p, m, known}
+for (let tries = 0; tries < 400000 && nodes.length < 6500; tries++) {
+  const p = inSphere(RW), r = p.length();
+  if (rnd() > wGuess(p)) continue;
+  nearest(SG, p.x, p.y, p.z, 4, 1, dd, ii);
+  if (dd[2] - dd[0] > 3.5) continue;
+  if (voidHit(p) || nearKnown(p, 9)) continue;
+  const vertex = dd[3] - dd[0] < 5;
+  const m = Math.min(3, (vertex ? .25 : .04) * Math.pow(rnd(), -1 / 1.7));
+  nodes.push({p, m, known: false});
+}
+for (const o of knownList) nodes.push({p: o.p, m: o.m, known: true});
+const NF = new Float32Array(nodes.length * 3); nodes.forEach((n, i) => { NF[3 * i] = n.p.x; NF[3 * i + 1] = n.p.y; NF[3 * i + 2] = n.p.z; });
+const NG = grid(NF, 40, RW + 42);
+
+const guess = new Cloud();
+const gcol = (p, k) => { const f = 1 - smooth(RW - 110, RW, p.length()); return [.42 * k * f, .6 * k * f, 1.0 * k * f]; };
+function addGuess(p, k, s) { if (voidHit(p) && rnd() < .9) return; const [r, g, b] = gcol(p, k); guess.add(p, r, g, b, s); }
+
+const ed = new Set(), nd = new Float64Array(5), ni = new Int32Array(5), md = new Float64Array(4), mi = new Int32Array(4);
+const mid = new THREE.Vector3();
+for (let i = 0; i < nodes.length; i++) {
+  const a = nodes[i].p;
+  nearest(NG, a.x, a.y, a.z, 5, 2, nd, ni);
+  for (let q = 1; q < 5; q++) {
+    const j = ni[q]; if (j < 0 || nd[q] > 75) continue;
+    if (nodes[i].known && nodes[j].known) continue;
+    const key = i < j ? i * 100000 + j : j * 100000 + i; if (ed.has(key)) continue;
+    mid.copy(a).add(nodes[j].p).multiplyScalar(.5);
+    nearest(SG, mid.x, mid.y, mid.z, 4, 1, md, mi);
+    if (md[1] - md[0] > 6) continue;           // kenar bir boşluğun ortasından geçmesin
+    ed.add(key);
+  }
+}
+for (const key of ed) {
+  const A = nodes[Math.floor(key / 100000)], B = nodes[key % 100000], len = A.p.distanceTo(B.p);
+  const str = Math.min(1.6, .15 + .5 * (A.m + B.m) + .25 * Math.pow(rnd(), -.6) * .3);
+  const n = Math.round(len * .22 * (.4 + str));
+  const bend = A.p.clone().add(B.p).multiplyScalar(.5).add(gv(len * .08));
+  for (let k = 0; k < n; k++) {
+    const t = rnd(), u = 1 - t;
+    const p = A.p.clone().multiplyScalar(u * u).addScaledVector(bend, 2 * u * t).addScaledVector(B.p, t * t).add(gv(.9 + 1.3 * Math.abs(gauss()) * str));
+    addGuess(p, .3 + .45 * rnd(), .3 + .15 * rnd());
+  }
+}
+for (const nd_ of nodes) {
+  if (nd_.known) continue;
+  const n = Math.round(4 + 70 * nd_.m), sig = .6 + 1.3 * Math.sqrt(nd_.m);
+  for (let k = 0; k < n; k++) { const off = gv(sig); addGuess(nd_.p.clone().add(off), .5 + .5 * Math.exp(-off.length() / sig), .3 + .2 * rnd()); }
+}
+// duvarlar (sayfalar): iki tohuma eşit uzak noktalar, soluk
+for (let tries = 0, got = 0; tries < 500000 && got < 26000; tries++) {
+  const p = inSphere(RW); if (rnd() > wGuess(p)) continue;
+  nearest(SG, p.x, p.y, p.z, 2, 1, dd, ii);
+  if (dd[1] - dd[0] > 1.6) continue;
+  addGuess(p, .12 + .12 * rnd(), .3); got++;
+}
+// boşluk içi seyrek gökadalar
+for (let i = 0; i < 2500; i++) { const p = inSphere(RW); if (rnd() > wGuess(p)) continue; const [r, g, b] = gcol(p, .08); guess.add(p, r, g, b, .3); }
+
+/* ================= gözlenebilir evren: homojen sis + CMB ================= */
+const haze = new Cloud();
+const ZFRONT = 14, DFRONT = DC(ZFRONT), DCMB = DC(1090);
+for (let i = 0; i < 90000; i++) {
+  const R1 = RW * .9, R2 = DFRONT, r = Math.cbrt(rnd() * (R2 ** 3 - R1 ** 3) + R1 ** 3), z = zOfD(r);
+  if (rnd() > 1 / (1 + (z / 2.2) ** 2)) continue;
+  const u = V(gauss(), gauss(), gauss()).normalize();
+  const t = Math.min(1, Math.log(1 + z) / Math.log(15));                 // 0: yakın, 1: z≈14
+  const k = .55 + .45 * rnd();
+  haze.add(u.multiplyScalar(r), k * (.75 + .25 * t), k * (.8 - .55 * t), k * (1 - .9 * t), 26 + 14 * rnd());
+}
+const cmb = new Cloud();
+{
+  const bumps = []; for (let i = 0; i < 260; i++) bumps.push({u: V(gauss(), gauss(), gauss()).normalize(), a: gauss(), w: Math.cos((4 + 12 * rnd()) * D2R)});
+  const cold = gal2sg(gUnit(209, -57));
+  bumps.push({u: cold, a: -3.2, w: Math.cos(5 * D2R)});
+  for (let i = 0; i < 42000; i++) {
+    const u = V(gauss(), gauss(), gauss()).normalize(); let n = 0;
+    for (const b of bumps) { const c = u.dot(b.u); if (c > b.w) n += b.a * (c - b.w) / (1 - b.w); }
+    n = Math.tanh(n * .9);
+    const r = .55 + .45 * Math.max(0, n), b = .55 + .45 * Math.max(0, -n), g = .32 + .12 * (1 - Math.abs(n));
+    cmb.add(u.multiplyScalar(DCMB), r * .55, g * .55, b * .55, 240);
+  }
+}
+
+/* ================= noktaları sahneye koy ================= */
+const knownMat = pointMat({minPx: 1.5, maxPx: 7, floor: .16, gain: 1.15});
+const guessMat = pointMat({minPx: 1.4, maxPx: 6, floor: .12, gain: .95});
+const hazeMat = pointMat({minPx: 1.3, maxPx: 5, floor: .25, gain: .55});
+const farMat = pointMat({minPx: 1.6, maxPx: 6, floor: .35, gain: 1});
+const realMat = pointMat({minPx: 1.6, maxPx: 7, floor: .42, gain: 2.1});
+const cmbMat = pointMat({minPx: 2.2, floor: .5, gain: .32, maxPx: 60});
+const knownPts = known.build(knownMat), guessPts = guess.build(guessMat), hazePts = haze.build(hazeMat), cmbPts = cmb.build(cmbMat);
+const realPts = real.build(realMat);   // boş başlar; gökadalar VizieR'den gelince doldurulur
+load2MRS();
+const farPts = farC.build(farMat);
+
+// biz: sabit piksel boyutlu yeşil işaret
+const usC = new Cloud(); usC.add(V(0, 0, 0), .5, 1, .7, 0);
+const usPts = usC.build(pointMat({minPx: 7, maxPx: 7, floor: 1}));
+
+/* ================= Laniakea akış çizgileri ================= */
+const laniGroup = new THREE.Group(); scene.add(laniGroup);
+const attract = knownList.filter(o => inLani(o.p)).map(o => ({p: o.p, w: o.id === 'norma' ? 6 : o.m}));
+function vel(p) { const v = V(0, 0, 0); for (const a of attract) { const d = a.p.clone().sub(p), r = d.length(); v.addScaledVector(d.normalize(), a.w / (r + 12)); } return v.normalize(); }
+const streams = [], segP = [], segC = [];
+for (let s = 0; s < 170; s++) {
+  const p = V(gauss(), gauss(), gauss()).normalize().multiplyScalar(.93 + .07 * rnd()).multiply(LANI_R).add(LANI_C);
+  const pts = [p.clone()];
+  for (let k = 0; k < 260 && p.distanceTo(P('norma')) > 3; k++) { p.addScaledVector(vel(p), 1.1); pts.push(p.clone()); }
+  streams.push(pts);
+  for (let i = 1; i < pts.length; i++) {
+    const f = i / pts.length, b = .025 + .3 * f * f;
+    segP.push(pts[i - 1].x, pts[i - 1].y, pts[i - 1].z, pts[i].x, pts[i].y, pts[i].z);
+    segC.push(.3 * b, .55 * b, 1 * b, .3 * b, .55 * b, 1 * b);
+  }
+}
+{
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(segP, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(segC, 3));
+  laniGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false})));
+  const bound = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 26), new THREE.MeshBasicMaterial({color: 0x5b7dff, wireframe: true, transparent: true, opacity: .05, depthWrite: false}));
+  bound.position.copy(LANI_C); bound.scale.copy(LANI_R); laniGroup.add(bound);
+}
+const flowC = new Cloud(); streams.forEach(() => flowC.add(V(0, 0, 0), .55, .8, 1, .9));
+const flowMat = pointMat({minPx: 2.2, maxPx: 10, floor: .6});
+const flowPts = flowC.build(flowMat); scene.remove(flowPts); laniGroup.add(flowPts);
+const phase = streams.map(() => rnd());
+
+/* ================= boşluk küreleri ================= */
+const voidGroup = new THREE.Group(); scene.add(voidGroup);
+for (const v of VOIDS) {
+  const m = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2),
+    new THREE.MeshBasicMaterial({color: 0x8f9cc4, wireframe: true, transparent: true, opacity: v.faint ? .018 : .045, depthWrite: false}));
+  m.position.copy(v.c); m.scale.setScalar(v.r); voidGroup.add(m);
+}
+
+/* ================= kabuklar: z≈14 cephesi ve CMB ================= */
+const shellGroup = new THREE.Group(); scene.add(shellGroup);
+{
+  const mk = (r, col, op) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), new THREE.MeshBasicMaterial({color: col, wireframe: true, transparent: true, opacity: op, depthWrite: false})); shellGroup.add(m); return m; };
+  mk(DFRONT, 0x7c8cff, .035);
+}
+
+/* ================= Kaçınma Bölgesi (|b| < 10°) ================= */
+const zoaGroup = new THREE.Group(); scene.add(zoaGroup);
+const zoaInner = new THREE.Group(); zoaInner.matrixAutoUpdate = false; zoaInner.matrix.copy(GAL2SG); zoaGroup.add(zoaInner);
+{
+  const N = 160, b = 10 * D2R, pos = [], rim = [[], []];
+  const gp = (l, bb) => [Math.cos(bb) * Math.cos(l), Math.cos(bb) * Math.sin(l), Math.sin(bb)];
+  for (let i = 0; i < N; i++) {
+    const l0 = i / N * 6.2832, l1 = (i + 1) / N * 6.2832;
+    for (const s of [1, -1]) pos.push(0, 0, 0, ...gp(l0, s * b), ...gp(l1, s * b));
+    pos.push(...gp(l0, b), ...gp(l0, -b), ...gp(l1, b), ...gp(l1, b), ...gp(l0, -b), ...gp(l1, -b));
+    rim[0].push(...gp(l0, b)); rim[1].push(...gp(l0, -b));
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  zoaInner.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color: 0xff7a55, transparent: true, opacity: .045, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending})));
+  for (const r of rim) { const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(r, 3));
+    zoaInner.add(new THREE.LineLoop(lg, new THREE.LineBasicMaterial({color: 0xff8a66, transparent: true, opacity: .22, depthWrite: false}))); }
+}
+
+/* ================= mesafe halkaları (süpergalaktik düzlem) ================= */
+const ringGroup = new THREE.Group(); scene.add(ringGroup);
+const RINGS = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000];
+const ringObjs = RINGS.map(r => {
+  const pts = []; for (let i = 0; i <= 180; i++) { const a = i / 180 * 6.2832; pts.push(Math.cos(a) * r, Math.sin(a) * r, 0); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  const line = new THREE.Line(g, new THREE.LineBasicMaterial({color: 0x56608c, transparent: true, opacity: .35, depthWrite: false}));
+  ringGroup.add(line); return {r, line};
+});
+
+/* ================= biçimlendirme ================= */
+const nf = (x, d = 0) => x.toLocaleString(lang === 'en' ? 'en-US' : 'tr-TR', {maximumFractionDigits: d, minimumFractionDigits: 0});
+function fmtMpc(d) { if (d < 1) return nf(d * 1000) + ' kpc'; if (d < 10) return nf(d, 1) + ' Mpc'; if (d < 1000) return nf(d) + ' Mpc'; return nf(d / 1000, d < 10000 ? 2 : 1) + ' Gpc'; }
+function fmtLy(d) { const m = d * 3.26156; if (m < 1) return nf(m * 1000) + ' ' + t('lyK'); if (m < 1000) return nf(m, m < 10 ? 1 : 0) + ' ' + t('lyM'); return nf(m / 1000, 1) + ' ' + t('lyB'); }
+function fmtYr(g) { if (g < .001) return nf(g * 1e6) + ' ' + t('yK'); if (g < 1) return nf(g * 1000) + ' ' + t('yM'); return nf(g, 2) + ' ' + t('yB'); }
+
+/* ================= etiketler ================= */
+// sat: büyük gökadaların yakın uyduları, etiketleri yalnızca yaklaşınca görünür
+const LV = {sat: [0, 1.6], lg: [0, 28], local: [4, 200], lani: [45, 950], web: [380, 7000], far: [2600, 1e9], all: [0, 1e9]};
+const range = lv => lv.split(' ').reduce((a, k) => [Math.min(a[0], LV[k][0]), Math.max(a[1], LV[k][1])], [1e9, 0]);
+const labelGroup = new THREE.Group(); scene.add(labelGroup);
+const labels = [];
+function addLabel(text, pos, cls, lv, info, grp, parent = labelGroup) {
+  const el = document.createElement('div'); el.className = 'lbl ' + cls;
+  const o = new CSS2DObject(el); o.center.set(0, .5); o.position.copy(pos); parent.add(o);
+  if (info) { el.tabIndex = 0; el.setAttribute('role', 'button');
+    el.addEventListener('click', e => { e.stopPropagation(); select(info); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(info); } });
+    el.addEventListener('pointerdown', e => e.stopPropagation()); }
+  // tx: tur eşleştirmesi için hep Türkçe metin; src: dile göre yenilenen kaynak (dize, {tr,en} ya da işlev)
+  const l = {o, rng: range(lv), grp, info, el, src: text, tx: typeof text === 'object' ? text.tr : typeof text === 'function' ? text() : text};
+  labels.push(l); labelText(l); return o;
+}
+const labelText = l => { const s = l.src; l.el.textContent = typeof s === 'function' ? s() : typeof s === 'object' ? (lang === 'en' && s.en ? s.en : s.tr) : l.info ? nm(l.info) : s; };
+const CONF = {ok: ['conf_ok', 'c-ok'], approx: ['conf_approx', 'c-approx'], debated: ['conf_debated', 'c-debated']};
+const CONF_T = {ok: 'conft_ok', approx: 'conft_approx', debated: 'conft_debated'};
+const SIZE = {'gökada': 2.5, 'grup': 10, 'küme': 34, 'süperküme': 160, 'duvar': 420};
+for (const o of Object.values(OBJ)) {
+  if (!o.lbl) continue;
+  addLabel(o.n, o.p, o.lbl === 2 ? 'major' : '', o.lv, {n: o.n, en: o.en, k: o.k, c: o.c, t: o.t, p: o.p, dist: o.dist, z: o.z, size: SIZE[o.k]});
+}
+for (const s of SC) {
+  const p = mean(s.of); const lift = p.length() * .07 + 6; p.z += lift;
+  addLabel(s.n, p, 'sc', s.lv, {n: s.n, en: s.en, k: s.k || 'süperküme', c: s.c, t: s.t, p, dist: p.length(), z: zOfD(p.length()), size: s.k === 'duvar' ? 500 : 180});
+}
+for (const v of VOIDS) {
+  const p = v.faint ? V(v.r * .72, -v.r * .72, 0) : v.c;
+  addLabel(v.n, p, 'void', v.lv, {n: v.n, en: v.en, k: 'boşluk', c: v.conf, t: v.t, p: v.c, dist: v.c.length(), z: zOfD(Math.max(v.c.length(), 1e-3)), size: v.r * 3.2}, 'void');
+}
+// z<1 civarındaki uzak yapılar kozmik ağ ölçeğinde, daha uzaktakiler gözlenebilir evren ölçeğinde etiketlenir
+for (const o of FAR) addLabel(o.n, o.p, 'far', o.dist < 3500 ? 'web' : 'far', {n: o.n, en: o.en, k: o.k, c: o.c, t: o.t, p: o.p, dist: o.dist, z: o.z, size: o.size});
+addLabel({tr:'Laniakea', en:'Laniakea'}, LANI_C.clone().add(V(0, 0, LANI_R.z * 1.02)), 'lani', 'lani',
+  {n: 'Laniakea Süperkümesi', k: 'süperküme', c: 'ok', p: LANI_C, dist: LANI_C.length(), z: zOfD(LANI_C.length()), size: 300,
+   t: 'Hawaii dilinde "ölçülemez cennet". 2014\'te Tully ve ekibi tarafından gökada hızlarından tanımlandı: ~160 Mpc (520 milyon ışık yılı) çapında, ~100.000 gökada, ~10¹⁷ Güneş kütlesi. İçindeki her şey Büyük Çekici\'ye doğru akar. Sınırı, Cosmicflows-2 kataloğundaki ~8.000 gökadanın uzaklık ve hız ölçümlerinden çizildi; bu modelde basitleştirilmiş bir elipsoit.',
+   en:{n:'Laniakea Supercluster', t:'Hawaiian for "immeasurable heaven". Defined in 2014 by Tully and colleagues from galaxy velocities: ~160 Mpc (520 million light-years) across, ~100,000 galaxies, ~10¹⁷ solar masses. Everything in it flows toward the Great Attractor. Its boundary was drawn from distance and velocity measurements of the ~8,000 galaxies in the Cosmicflows-2 catalog; in this model it is a simplified ellipsoid.'}}, 'lani');
+addLabel({tr:'z ≈ 14 · en uzak gökadalar', en:'z ≈ 14 · most distant galaxies'}, V(0, -DFRONT * .71, DFRONT * .71), 'shell', 'far',
+  {n: 'Gökada cephesi (z ≈ 14)', k: 'yüzey', c: 'ok', p: V(0, 0, 0), dist: DFRONT, z: ZFRONT, size: 50000,
+   t: 'JWST\'nin bugün ulaşabildiği sınır. Bu kabuğun içindeki gökadaların çok küçük bir kısmı gözlendi; bu modelde homojen bir sis olarak gösterildi. Büyük ölçekte (~300 Mpc üstü) evren her yönde aynı görünür.',
+   en:{n:'Galaxy front (z ≈ 14)', t:'The limit JWST can reach today. Only a tiny fraction of the galaxies inside this shell have been observed; this model shows it as a homogeneous haze. On large scales (above ~300 Mpc) the universe looks the same in every direction.'}});
+addLabel({tr:'Kozmik mikrodalga arka plan', en:'Cosmic microwave background'}, V(DCMB * .62, DCMB * .62, DCMB * .45), 'shell', 'far',
+  {n: 'Kozmik mikrodalga arka plan', k: 'yüzey', c: 'ok', p: V(0, 0, 0), dist: DCMB, z: 1090, size: 52000,
+   t: `Evren ~380.000 yaşındayken saydamlaştığı yüzey. Işıkla bundan ötesini göremeyiz. Gözlenebilir evrenin kenarı biraz daha ötede, ~${nf(HORIZON / 1000, 1)} Gpc. Mavi leke: Soğuk Nokta. Renk desenleri temsilîdir.`,
+   en:{n:'Cosmic microwave background', t:`The surface from which the universe, ~380,000 years old, became transparent. We cannot see beyond it with light. The edge of the observable universe lies a little farther out, at ~${nf(HORIZON / 1000, 1)} Gpc. Blue blob: the Cold Spot. The color patterns are illustrative.`}});
+addLabel({tr:'Kaçınma Bölgesi', en:'Zone of Avoidance'}, V(.82, 0, 0), 'zoa', 'all',
+  {n: 'Kaçınma Bölgesi', k: 'gözlem sınırı', c: 'ok', p: V(0, 0, 0), dist: 0, z: 0, size: 120,
+   t: 'Samanyolu\'nun diski gökyüzünün ~%20\'sini örter. Bu kamanın içinde gökadaları görmek çok zordur: Büyük Çekici, Norma Kümesi ve Güney Kutbu Duvarı\'nın uzun süre gizli kalması bundandır. Kama bizim bakış açımıza bağlıdır, uzayda bir yapı değildir.',
+   en:{n:'Zone of Avoidance', t:'The disk of the Milky Way covers ~20% of the sky. Seeing galaxies inside this wedge is very hard, which is why the Great Attractor, the Norma Cluster and the South Pole Wall stayed hidden for so long. The wedge depends on our viewpoint; it is not a structure in space.'}}, 'zoa', zoaInner);
+addLabel({tr:'Biz buradayız', en:'You are here'}, V(0, 0, 0), 'us', 'all', null);
+const ringLabels = RINGS.map(r => addLabel(() => `${fmtMpc(r)} · ${fmtLy(r)}`, V(r * .7071, -r * .7071, 0), 'ring', 'all', null, 'ring'));
+RINGS.forEach((r, i) => { labels[labels.indexOf(labels.find(l => l.o === ringLabels[i]))].rng = [r * 1.1, r * 9]; });
+
+/* ================= bilgi kartı ================= */
+let current = null;
+function select(info) {
+  current = info;
+  $('iName').textContent = nm(info);
+  $('iKind').textContent = kindName(info.k);
+  const [ck, cc] = CONF[info.c] || CONF.ok; const ce = $('iConf'); ce.textContent = t(ck); ce.className = 'chip ' + cc; ce.title = CONF_T[info.c] ? t(CONF_T[info.c]) : '';
+  $('iDist').textContent = info.dist > 0 ? `${fmtMpc(info.dist)} · ${fmtLy(info.dist)}` : '—';
+  $('iZ').textContent = info.z > 0 ? 'z = ' + nf(info.z, info.z < .1 ? 4 : info.z < 10 ? 3 : 1) : '—';
+  $('iLb').textContent = info.z > 0 ? t('lb', fmtYr(TL(info.z))) : '—';
+  const p = info.p; $('iSG').textContent = info.dist > 0 ? [p.x, p.y, p.z].map(v => nf(v, Math.abs(v) < 10 ? 1 : 0)).join(' · ') : '0 · 0 · 0';
+  const u = info.dist > 0 && p.lengthSq() > 1e-9 ? p.clone().normalize() : null;
+  $('iSky').textContent = u ? fmtSky(u) : '—';
+  $('iGal').textContent = u ? fmtGal(u) : '—';
+  $('iDesc').textContent = ds(info) || '';
+  $('info').hidden = false;
+  setHash(info);
+}
+function closeInfo() { $('info').hidden = true; current = null; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+$('infoClose').onclick = closeInfo;
+$('iFly').onclick = () => { if (current) flyTo(current.p, current.size || 40); };
+
+/* ================= uçuş ve ölçekler ================= */
+const PRESETS = [
+  {t: V(0, 0, 0), d: 3}, {t: P('virgo').clone().multiplyScalar(.35), d: 42}, {t: LANI_C.clone().multiplyScalar(.75), d: 250},
+  {t: V(0, 0, 0), d: 1300}, {t: V(0, 0, 0), d: 28000},
+];
+let fly = null;
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+function flyTo(target, dist, dur = 2.6) {
+  const fromD = camera.position.distanceTo(controls.target);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  fly = {fromT: controls.target.clone(), toT: target.clone(), fromD, toD: dist, dir, t: 0, dur: reduceMotion ? .01 : dur};
+}
+controls.addEventListener('start', () => { fly = null; });
+document.querySelectorAll('.scales button').forEach(b => b.addEventListener('click', () => { const p = PRESETS[+b.dataset.s]; flyTo(p.t, p.d); }));
+
+/* ================= arayüz ================= */
+const layerOn = {void: true, zoa: true, lani: true, ring: true};
+const bindT = (id, fn) => $(id).addEventListener('change', e => fn(e.target.checked));
+bindT('tKnown', v => { knownPts.visible = farPts.visible = v; });
+bindT('tReal', v => { realPts.visible = v; });
+bindT('tGuess', v => { guessPts.visible = v; hazePts.visible = v; });
+bindT('tVoids', v => { voidGroup.visible = layerOn.void = v; });
+bindT('tZoa', v => { zoaGroup.visible = layerOn.zoa = v; });
+bindT('tLani', v => { laniGroup.visible = layerOn.lani = v; });
+bindT('tRings', v => { ringGroup.visible = layerOn.ring = v; });
+bindT('tLabels', v => { labelGroup.visible = v; zoaInner.children.forEach(c => { if (c.isCSS2DObject) c.visible = v; }); });
+bindT('tRot', v => { controls.autoRotate = v; });
+let gBright = 1; $('bright').addEventListener('input', e => { gBright = +e.target.value; });
+const panel = $('panel');
+function setPanel(open) { panel.classList.toggle('closed', !open); $('collapse').textContent = t(open ? 'hide' : 'show'); $('collapse').setAttribute('aria-expanded', open); }
+$('collapse').onclick = () => setPanel(panel.classList.contains('closed'));
+if (innerWidth < 640) setPanel(false);
+
+function resize() {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); labelR.setSize(innerWidth, innerHeight);
+  const sc = innerHeight * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * D2R / 2));
+  for (const m of pointMats) m.uniforms.uScale.value = sc;
+}
+addEventListener('resize', resize); resize();
+
+/* ================= arama ================= */
+const fold = s => (s || '').replace(/[ıİşŞğĞüÜöÖçÇâÂîÎûÛôÔ]/g, c => ({'ı':'i','İ':'i','ş':'s','Ş':'s','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c','â':'a','Â':'a','î':'i','Î':'i','û':'u','Û':'u','ô':'o','Ô':'o'}[c])).toLowerCase();
+const slug = s => fold(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const sBox = $('searchBox'), sList = $('searchList');
+let sRes = [], sIdx = -1;
+function sMark() {
+  [...sList.children].forEach((li, i) => li.setAttribute('aria-selected', i === sIdx ? 'true' : 'false'));
+  if (sIdx >= 0) { sBox.setAttribute('aria-activedescendant', 'sl' + sIdx); sList.children[sIdx].scrollIntoView({block: 'nearest'}); }
+  else sBox.removeAttribute('aria-activedescendant');
+}
+function sRender() {
+  const sk = s => fold(s).replace(/[^a-z0-9]+/g, '');   // boşluk, tire ve noktalama yok sayılır: "momz" → MoM-z14
+  const q = sk(sBox.value);
+  if (!q) { sClose(); return; }
+  const sn = i => [i.n, i.en && i.en.n].filter(Boolean).map(sk);   // hem Türkçe hem İngilizce ad
+  sRes = labels.filter(l => l.info && sn(l.info).some(x => x.includes(q)))
+    .sort((a, b) => (sn(a.info).some(x => x.startsWith(q)) ? 0 : 1) - (sn(b.info).some(x => x.startsWith(q)) ? 0 : 1) || a.info.dist - b.info.dist)
+    .slice(0, 8);
+  sIdx = -1; sList.innerHTML = '';
+  sRes.forEach((l, i) => {
+    const li = document.createElement('li');
+    li.id = 'sl' + i; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', 'false'); li.className = 'sOpt';
+    const b = document.createElement('b'); b.textContent = nm(l.info);
+    const sm = document.createElement('small'); sm.textContent = kindName(l.info.k) + ' · ' + (l.info.dist > 0 ? fmtMpc(l.info.dist) : '—');
+    li.append(b, sm);
+    li.addEventListener('pointerenter', () => { sIdx = i; sMark(); });
+    li.addEventListener('click', () => sPick(i));
+    sList.appendChild(li);
+  });
+  if (!sRes.length) {
+    const li = document.createElement('li'); li.setAttribute('role', 'option'); li.setAttribute('aria-disabled', 'true');
+    li.className = 'sNone'; li.textContent = t('none'); sList.appendChild(li);
+  }
+  sList.hidden = false; sBox.setAttribute('aria-expanded', 'true');
+}
+function sClose() { sList.hidden = true; sBox.setAttribute('aria-expanded', 'false'); sBox.removeAttribute('aria-activedescendant'); sIdx = -1; }
+function sPick(i) {
+  const l = sRes[i]; if (!l) return;
+  select(l.info); flyTo(l.info.p, l.info.size || 40);
+  sClose();
+}
+sBox.addEventListener('input', sRender);
+sBox.addEventListener('focus', () => { if (sBox.value.trim()) sRender(); });
+sBox.addEventListener('blur', sClose);
+sBox.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (sList.hidden) { if (e.key === 'ArrowDown') sRender(); return; }
+    if (!sRes.length) return;
+    sIdx = e.key === 'ArrowDown' ? Math.min(sIdx + 1, sRes.length - 1) : Math.max(sIdx - 1, -1);
+    sMark();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!sList.hidden && sRes.length) sPick(sIdx >= 0 ? sIdx : 0);
+  } else if (e.key === 'Escape') { if (!sList.hidden) sClose(); else sBox.blur(); }
+  else if (e.key === 'Tab') sClose();
+});
+sList.addEventListener('pointerdown', e => e.preventDefault());
+
+/* ================= tur ================= */
+const TOUR = [
+  {q: 'Biz buradayız', h: 'Biz buradayız', d: 3,
+    t: `Samanyolu'nun bir kolu, Güneş Sistemi: haritanın merkezindeki yeşil nokta. Tur boyunca her durak bir öncekinden daha uzak olacak; son durağımız ışığın bize ulaşabildiği evrenin kenarı. «İleri» düğmesiyle yola çıkın.`,
+    en:{h:'You are here', t:'The Solar System, in one of the Milky Way\'s spiral arms: the green dot at the center of the map. Each stop on the tour will be farther than the last; our final stop is the edge of the universe that light can reach us from. Press the "Next" button to set off.'}},
+  {q: 'Andromeda (M31)', h: 'Yerel Grup · Andromeda', d: 12,
+    t: `Bize en yakın büyük gökada Andromeda: ~2,5 milyon ışık yılı uzakta ve bize doğru yaklaşıyor; birkaç milyar yıl içinde Samanyolu ile birleşmesi bekleniyor. Cüceleriyle birlikte Yerel Grubu oluştururuz — toplam çapı yalnızca ~3 Mpc, haritanın ilk ölçeği.`,
+    en:{h:'Local Group · Andromeda', t:'The nearest large galaxy is Andromeda: ~2.5 million light-years away and approaching us; it is expected to merge with the Milky Way in a few billion years. Together with their dwarf satellites they make up the Local Group, only ~3 Mpc across in total, the first scale on the map.'}},
+  {q: 'Başak Kümesi', h: 'Başak Kümesi', d: 55,
+    t: `Yakın evrenin en büyük kümesi: 1.300'den fazla gökada, merkezinde dev eliptik M87 ve 2019'da görüntülenen kara deliği. Yerel Grup ona doğru ~200 km/s ek hızla düşüyor. Bu küme, bir sonraki durağımız Laniakea'nın da kalbidir.`,
+    en:{h:'Virgo Cluster', t:'The largest cluster in the nearby universe: more than 1,300 galaxies, with the giant elliptical M87 at its center and its black hole, imaged in 2019. The Local Group is falling toward it with an extra ~200 km/s. This cluster is also the heart of our next stop, Laniakea.'}},
+  {q: 'Laniakea Süperkümesi', h: 'Laniakea', d: 300,
+    t: `2014'te gökada hızlarından tanımlanan süperküme: ~520 milyon ışık yılı çapında, ~100 bin gökada. İçindeki her şey, mavi akış çizgilerinin gösterdiği gibi ortak bir yöne — Büyük Çekici'ye — akıyor. Adı Hawaii dilinde «ölçülemez cennet» demek.`,
+    en:{h:'Laniakea', t:'A supercluster defined in 2014 from galaxy velocities: ~520 million light-years across, ~100,000 galaxies. Everything in it flows toward a common direction, the Great Attractor, as the blue streamlines show. The name means "immeasurable heaven" in Hawaiian.'}},
+  {q: 'Norma Kümesi · Büyük Çekici', h: 'Norma · Büyük Çekici', d: 90,
+    t: `Laniakea'daki ortak akışın yönelttiği bölge: Samanyolu'nun tozunun arkasında gizli kalan dev kütle yoğunlaşması. Merkezine en yakın zengin küme Norma'dır (Abell 3627), ~68 Mpc uzaklıkta. Bölge tam galaktik düzlemin ardında kaldığı için onlarca yıl görünmez kaldı.`,
+    en:{h:'Norma · Great Attractor', t:'The region the common flow in Laniakea points to: a giant concentration of mass hidden behind the dust of the Milky Way. The richest cluster nearest its center is Norma (Abell 3627), ~68 Mpc away. Because the region lies right behind the galactic plane, it stayed invisible for decades.'}},
+  {q: 'Perseus–Balık Süperkümesi', h: 'Perseus–Balık Süperkümesi', d: 230,
+    t: `Gökyüzünde 40°'den uzun uzanan bir gökada zinciri: ~75 Mpc'de yüzlerce küme ve grup. Yerel Boşluk'un öbür yakasında durur; Laniakea'dan ayrı bir çekim havzasıdır. Kalbindeki Perseus Kümesi (Abell 426), X-ışınında gökyüzünün en parlak kümesidir.`,
+    en:{h:'Perseus–Pisces Supercluster', t:'A chain of galaxies stretching over 40° of sky: hundreds of clusters and groups at ~75 Mpc. It lies on the far side of the Local Void and is a basin of attraction separate from Laniakea. The Perseus Cluster (Abell 426) at its heart is the brightest cluster in the X-ray sky.'}},
+  {q: 'CfA2 Büyük Duvarı', h: 'Koma ve CfA2 Büyük Duvarı', d: 380,
+    t: `1989'da Geller ve Huchra'nın haritasında bulunan ilk büyük duvar: ~200 Mpc uzunluğunda, yalnızca birkaç Mpc kalınlığında bir gökada tabakası. Ortasındaki Koma Kümesi'nde Zwicky 1933'te karanlık maddenin ilk izini buldu. Bu uzaklıktan sonra haritada tahmini ağ — mavi doku — ağırlık kazanır.`,
+    en:{h:'Coma and the CfA2 Great Wall', t:'The first great wall, found in Geller and Huchra\'s 1989 map: a sheet of galaxies ~200 Mpc long and only a few Mpc thick. In the Coma Cluster at its middle, Zwicky found the first trace of dark matter in 1933. Beyond this distance the predicted web on the map, the blue texture, takes over.'}},
+  {q: 'Shapley Süperkümesi', h: 'Shapley Süperkümesi', d: 280,
+    t: `Yakın evrendeki en büyük kütle yoğunlaşması: ~10¹⁶ Güneş kütlesi, iki düzine zengin küme. Laniakea dahil çevresindeki yapıları kendine çeker; gökadalarımızın hızının önemli bir bölümü buradan gelir. En büyük üyesi Abell 3558'dir.`,
+    en:{h:'Shapley Supercluster', t:'The largest concentration of mass in the nearby universe: ~10¹⁶ solar masses, two dozen rich clusters. It pulls on the structures around it, Laniakea included; a large part of the Local Group\'s own motion comes from here. Its largest member is Abell 3558.'}},
+  {q: 'Sloan Büyük Duvarı', h: 'Sloan Büyük Duvarı', d: 550,
+    t: `2003'te Sloan Dijital Gökyüzü Araştırması'nda bulundu: ~420 Mpc uzunluğunda, CfA2 duvarının iki katı. Tek bir kütleçekimle bağlı yapı olmayabilir; birkaç süperkümenin hizalanması da olabilir. Işığı bize ~1 milyar yıl önce yola çıktı.`,
+    en:{h:'Sloan Great Wall', t:'Found in 2003 by the Sloan Digital Sky Survey: ~420 Mpc long, twice the CfA2 wall. It may not be a single gravitationally bound structure; it could also be an alignment of several superclusters. Its light set out toward us ~1 billion years ago.'}},
+  {q: 'Huge-LQG', h: 'Huge-LQG', d: 3600,
+    t: `73 kuasardan örülen ~1,2 Gpc (~4 milyar ışık yılı) boyunda dev grup (2013); bilinen en büyük yapı adaylarından. Bu boy, evrenin büyük ölçekte tekdüze olduğunu öngören kozmolojik ilkeyi zorlar. Gerçek bir yapı mı, rastgele bir yığılma mı — tartışma sürüyor.`,
+    en:{h:'Huge-LQG', t:'A giant group woven from 73 quasars, ~1.2 Gpc (~4 billion light-years) long (2013); among the largest candidate structures known. This size strains the cosmological principle, which predicts the universe is uniform on large scales. Whether it is a real structure or a random clump, the debate continues.'}},
+  {q: 'Gökada cephesi (z ≈ 14)', h: 'Gökada cephesi · z ≈ 14', d: 18000,
+    t: `James Webb'in bugün görebildiği sınır: Evren ~300 milyon yaşındayken var olan gökadalar. Bu kabuğun içindeki gökadaların çok küçük bir bölümü tek tek gözlendi; modelde homojen bir sis olarak çiziliyor. Her yeni teleskop bu cepheyi biraz daha geriye itiyor.`,
+    en:{h:'Galaxy front · z ≈ 14', t:'The limit James Webb can see today: galaxies that existed when the universe was ~300 million years old. Only a tiny fraction of the galaxies inside this shell have been observed individually; the model draws it as a homogeneous haze. Every new telescope pushes this front a little farther back.'}},
+  {q: 'Kozmik mikrodalga arka plan', h: 'Kozmik mikrodalga arka plan', d: 21000,
+    t: `Işıkla görebileceğimiz en eski yüzey: Evren ~380 bin yaşında, ilk kez saydamlaştığında salınan ışık. Bugün her yönden mikrodalga olarak geliyor; ~1/100.000 düzeyindeki sıcaklık farkları gezdiğimiz kozmik ağın tohumlarıydı. Tur burada bitiyor.`,
+    en:{h:'Cosmic microwave background', t:'The oldest surface we can see with light: the light released when the universe, ~380 thousand years old, first became transparent. Today it arrives from every direction as microwaves; temperature differences at the ~1/100,000 level were the seeds of the cosmic web we have been touring. The tour ends here.'}},
+];
+const findStop = q => { const f = fold(q); return labels.find(l => (l.info && fold(l.info.n) === f) || fold(l.tx) === f); };
+let tour = null;
+function tourStart() {
+  const stops = TOUR.map(s => { const l = findStop(s.q); return l ? {...s, p: (l.info ? l.info.p : l.o.position).clone()} : null; }).filter(Boolean);
+  if (!stops.length) return;
+  tour = {stops, i: 0, rot: controls.autoRotate};
+  controls.autoRotate = false;
+  $('tourBtn').textContent = t('tourStop');
+  $('tourCard').hidden = false;
+  tourGo(0);
+}
+function tourRender() {
+  const s = tour.stops[tour.i], e = lang === 'en' && s.en ? s.en : s;
+  $('tourTitle').textContent = e.h || s.h; $('tourText').textContent = e.t || s.t;
+  $('tourStep').textContent = t('step', tour.i + 1, tour.stops.length);
+}
+function tourGo(i) {
+  tour.i = i; const s = tour.stops[i];
+  flyTo(s.p, s.d, 2.4);
+  tourRender();
+  $('tourPrev').disabled = i === 0;
+  $('tourNext').disabled = i === tour.stops.length - 1;
+}
+function tourEnd() {
+  if (!tour) return;
+  controls.autoRotate = tour.rot;
+  tour = null;
+  $('tourCard').hidden = true;
+  $('tourBtn').textContent = t('tourStart');
+}
+$('tourBtn').onclick = () => tour ? tourEnd() : tourStart();
+$('tourPrev').onclick = () => { if (tour && tour.i > 0) tourGo(tour.i - 1); };
+$('tourNext').onclick = () => { if (tour) tour.i < tour.stops.length - 1 ? tourGo(tour.i + 1) : tourEnd(); };
+$('tourEnd').onclick = tourEnd;
+
+/* ================= derin bağlantı ================= */
+function setHash(info) { try { history.replaceState(null, '', '#nesne=' + slug(info.n)); } catch (e) {} }
+const lblBySlug = sg => labels.find(l => l.info && slug(l.info.n) === sg);
+function applyHash() {
+  const m = location.hash.match(/^#nesne=([a-z0-9-]+)$/);
+  if (!m) return;
+  const l = lblBySlug(m[1]);
+  if (l) { select(l.info); flyTo(l.info.p, l.info.size || 40, 2.4); }
+}
+addEventListener('hashchange', applyHash);
+setTimeout(applyHash, reduceMotion ? 120 : 3900);   // açılış uçuşu bittikten sonra
+$('iLink').onclick = async () => {
+  let ok = false;
+  try { await navigator.clipboard.writeText(location.href); ok = true; }
+  catch (err) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = location.href; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:-999px;left:-999px';
+      document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove();
+    } catch (err2) {}
+  }
+  const b = $('iLink'); b.textContent = t(ok ? 'copied' : 'copyFail');
+  setTimeout(() => { b.textContent = t('link'); }, 1500);
+};
+
+/* ================= gök koordinatları: SG → galaktik → ekvatoral ================= */
+const eqf = EQ2GAL.flat();
+const EQ_M = new THREE.Matrix4().set(eqf[0], eqf[1], eqf[2], 0, eqf[3], eqf[4], eqf[5], 0, eqf[6], eqf[7], eqf[8], 0, 0, 0, 0, 1);
+const GAL2EQ_M = EQ_M.clone().transpose();        // ekvatoral → galaktik matrisinin tersi (transpoze)
+const SG2GAL_M = GAL2SG.clone().transpose();      // galaktik → süpergalaktik matrisinin tersi (transpoze)
+const sg2gal = u => u.clone().applyMatrix4(SG2GAL_M);
+const sg2eq = u => sg2gal(u).applyMatrix4(GAL2EQ_M);
+const atan2d = (y, x) => { const a = Math.atan2(y, x) / D2R; return a < 0 ? a + 360 : a; };
+const p2 = n => String(n).padStart(2, '0');
+function fmtSky(u) {
+  const q = sg2eq(u);
+  const rm = Math.round(atan2d(q.y, q.x) * 4), h = Math.floor(rm / 60) % 24, m = rm % 60;
+  const dec = Math.asin(Math.max(-1, Math.min(1, q.z))) / D2R;
+  const dm = Math.round(Math.abs(dec) * 60), dd = Math.floor(dm / 60), mm = dm % 60;
+  return p2(h) + (lang === 'en' ? 'ʰ ' : 'ˢ ') + p2(m) + (lang === 'en' ? 'ᵐ' : 'ᵈ') + ' · ' + (dec < 0 ? '−' : '+') + dd + '° ' + p2(mm) + '′';
+}
+function fmtGal(u) {
+  const g = sg2gal(u);
+  const l = atan2d(g.y, g.x), b = Math.asin(Math.max(-1, Math.min(1, g.z))) / D2R;
+  return nf(l, 0) + '° · ' + (b < 0 ? '−' : '+') + nf(Math.abs(b), 0) + '°';
+}
+
+/* ================= klavye kısayolları ================= */
+function toggleChk(id) { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event('change', {bubbles: true})); }
+function keysToggle(force) {
+  const k = $('keys'), open = force !== undefined ? force : k.hidden;
+  k.hidden = !open;
+  if (open) $('keysClose').focus(); else $('keysClose').blur();
+}
+$('keysClose').onclick = () => keysToggle(false);
+addEventListener('pointerdown', e => { if (!$('keys').hidden && !$('keys').contains(e.target)) keysToggle(false); }, true);
+addEventListener('keydown', e => {
+  if (e.defaultPrevented) return;
+  const a = document.activeElement, tag = a ? a.tagName : '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable)) return;
+  if (e.key === 'Escape') {
+    if (!$('keys').hidden) keysToggle(false);
+    else if (!sList.hidden) sClose();
+    else if (tour) tourEnd();
+    else if (!$('info').hidden) closeInfo();
+    return;
+  }
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.key === '/') { e.preventDefault(); if (panel.classList.contains('closed')) setPanel(true); sBox.focus(); return; }
+  if (e.key === '?') { e.preventDefault(); keysToggle(); return; }
+  if (e.key >= '1' && e.key <= '5') { e.preventDefault(); scBtns[+e.key - 1].click(); return; }
+  if (e.key === ' ') {
+    if (tag === 'BUTTON' || (a && (a.getAttribute('role') === 'button' || a.type === 'checkbox'))) return;
+    e.preventDefault(); toggleChk('tRot'); return;
+  }
+  const k = fold(e.key);
+  if (k === 'l') toggleChk('tLabels');
+  else if (k === 't') tour ? tourEnd() : tourStart();
+});
+
+/* ================= ekran görüntüsü ================= */
+const SCALE_NAMES = ['yerel-grup', 'yerel-levha', 'laniakea', 'kozmik-ag', 'gozlenebilir'];
+$('shotBtn').onclick = () => {
+  const cd = camera.position.distanceTo(controls.target);
+  let best = 0, bd = 1e9;
+  PRESETS.forEach((p, i) => { const e = Math.abs(Math.log(cd / p.d)); if (e < bd) { bd = e; best = i; } });
+  const a = document.createElement('a');
+  a.download = 'kozmik-ag-' + SCALE_NAMES[best] + '.png';
+  renderer.render(scene, camera);                   // çizim tamponu korunmadığı için kaydetmeden hemen önce yeniden çiz
+  a.href = renderer.domElement.toDataURL('image/png');
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+// başlangıç: Laniakea, sonra açılışta hafif geri çekilme
+controls.target.copy(PRESETS[2].t);
+camera.position.copy(controls.target).add(V(150, -210, 120).normalize().multiplyScalar(170));
+flyTo(PRESETS[2].t, 260, 3.5);
+$('loading').remove();
+
+/* ================= döngü ================= */
+const clock = new THREE.Clock();
+const scBtns = [...document.querySelectorAll('.scales button')];
+let lastRead = '';
+
+/* ================= dil: uygulama ================= */
+function applyLang() {
+  applyStatic();
+  setPanel(!panel.classList.contains('closed'));
+  $('iLink').textContent = t('link');
+  $('tourBtn').textContent = t(tour ? 'tourStop' : 'tourStart');
+  for (const l of labels) labelText(l);
+  if (current) select(current);
+  if (tour) tourRender();
+  if (!sList.hidden) sRender();
+  realStatus();
+  lastRead = '';
+}
+function setLang(l) {
+  if (l === lang) return;
+  lang = l;
+  try { localStorage.setItem('kozmik-lang', l); } catch (e) {}
+  try { const u = new URL(location.href); if (u.searchParams.has('lang')) { u.searchParams.set('lang', l); history.replaceState(null, '', u); } } catch (e) {}
+  applyLang();
+}
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.l)));
+applyLang();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), .1);
+  if (fly) {
+    fly.t += dt / fly.dur; const k = ease(Math.min(1, fly.t));
+    controls.target.lerpVectors(fly.fromT, fly.toT, k);
+    const d = Math.exp(Math.log(fly.fromD) * (1 - k) + Math.log(fly.toD) * k);
+    camera.position.copy(controls.target).addScaledVector(fly.dir, d);
+    if (fly.t >= 1) fly = null;
+  }
+  controls.update();
+  const cd = camera.position.distanceTo(controls.target);
+  camera.near = Math.max(.002, cd * .002); camera.far = Math.max(3e5, cd * 4); camera.updateProjectionMatrix();
+
+  // akış parçacıkları
+  if (laniGroup.visible) {
+    const arr = flowPts.geometry.attributes.position.array;
+    for (let i = 0; i < streams.length; i++) {
+      phase[i] = (phase[i] + dt * .1) % 1; const pts = streams[i], q = pts[Math.floor(phase[i] * (pts.length - 1))];
+      arr[3 * i] = q.x; arr[3 * i + 1] = q.y; arr[3 * i + 2] = q.z;
+    }
+    flowPts.geometry.attributes.position.needsUpdate = true;
+  }
+  // ölçeğe bağlı solma
+  const dimFar = 1 - .88 * smooth(3000, 25000, cd);
+  knownMat.uniforms.uBright.value = gBright * dimFar; farMat.uniforms.uBright.value = gBright; realMat.uniforms.uBright.value = gBright * dimFar;
+  guessMat.uniforms.uBright.value = gBright * dimFar;
+  hazeMat.uniforms.uBright.value = gBright * smooth(3500, 12000, cd);
+  cmbMat.uniforms.uBright.value = gBright * smooth(2500, 16000, cd);
+  hazePts.visible = $('tGuess').checked && cd > 3500;
+  cmbPts.visible = cd > 2500;
+  shellGroup.visible = cd > 3000;
+  laniGroup.children[0].material.opacity = (1 - smooth(900, 2500, cd)) * smooth(15, 70, cd); laniGroup.children[1].material.opacity = .05 * smooth(15, 70, cd);
+  zoaGroup.scale.setScalar(Math.min(DCMB, Math.max(1.5, cd * 1.1)));
+  for (const r of ringObjs) { const vis = cd > r.r * 1.1 && cd < r.r * 9; r.line.visible = vis; r.line.material.opacity = .35 * (1 - smooth(r.r * 5, r.r * 9, cd)); }
+
+  // etiket görünürlüğü
+  const lOn = $('tLabels').checked;
+  for (const l of labels) l.o.visible = lOn && cd >= l.rng[0] && cd <= l.rng[1] && (!l.grp || layerOn[l.grp]);
+
+  // ölçek göstergesi
+  let best = 0, bd = 1e9; PRESETS.forEach((p, i) => { const e = Math.abs(Math.log(cd / p.d)); if (e < bd) { bd = e; best = i; } });
+  scBtns.forEach((b, i) => b.classList.toggle('on', i === best && bd < .7));
+  const rd = `${t('view')} <b>${fmtMpc(cd)}</b> · ${fmtLy(cd)}`;
+  if (rd !== lastRead) { $('readout').innerHTML = rd; lastRead = rd; }
+
+  renderer.render(scene, camera);
+  labelR.render(scene, camera);
+});
+window.__cw = {OBJ, P, real, realPts, known: known.n, guess: guess.n, haze: haze.n, nodes: nodes.length, edges: ed.size, DC, zOfD, TL};
+</script>
