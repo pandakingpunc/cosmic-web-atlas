@@ -1,42 +1,42 @@
-# Kozmik Ağ Atlası
+# Cosmic Web Atlas
 
-Yerel Grup'tan kozmik mikrodalga arka plana kadar evrenin büyük ölçekli yapısını gösteren etkileşimli 3D model (Three.js, tek HTML dosyası).
+An interactive 3D model of the large-scale structure of the universe, from the Local Group out to the cosmic microwave background (Three.js, a single HTML file).
 
-## Dosyalar
+## Files
 
-- `kozmik-ag.html`: ana model. Tarayıcıda doğrudan açılır.
-- `index.html`: ilk Laniakea Süperkümesi taslağı.
+- `kozmik-ag.html`: the main model. Opens directly in the browser.
+- `index.html`: an early Laniakea Supercluster draft.
 
-## Neler var
+## What's inside
 
-- **2MRS gökadaları:** 2MASS Redshift Survey'deki 43.482 gerçek gökada, kırmızıya kaymalarından süpergalaktik koordinatlara yerleştirildi.
-- **Yerel Grup:** Samanyolu, Andromeda ve Üçgen'in yanında Macellan Bulutları, Yay, Heykeltıraş ve Fırın cüceleri, M32, M110, NGC 6822, IC 10, IC 1613, WLM, Andromeda II. Uydu etiketleri yalnızca yaklaşınca görünür.
-- **Yakın gruplar:** M81, Erboğa A, Heykeltıraş, Samanyolu'nun arkasındaki IC 342–Maffei grubu, NGC 1023, Sombrero, NGC 2997, Güvercin, Aslan II bulutu…
-- **Ölçülmüş yapılar:** Kataloğun göremediği kümeler, süperkümeler, duvarlar ve uzak yapılar (Shapley, Vela, Çoban, Sloan ve BOSS büyük duvarları, Huge-LQG, Herkül–Kuzey Tacı Büyük Duvarı…) literatürdeki konumlarıyla.
-- **Uzak nesneler:** Mermi Kümesi, Pandora, Anka, El Gordo, Örümcek Ağı ve SPT2349−56 protokümeleri, kuasar J0313−1806, GN-z11, JADES-GS-z14-0, MoM-z14.
-- **Boşluklar:** Yerel Boşluk ve kuzey/güney kolları, Heykeltıraş, Mikroskop, Çoban, Dipol İtici, KBC, Irmak Süper Boşluğu…
-- **Tahmini ağ:** Haritalanmamış bölgeler (Samanyolu düzleminin arkası dahil) Voronoi köpük modeliyle dolduruldu. Doku gerçekçi, tek tek konumlar uydurma.
-- **Kaçınma Bölgesi**, Laniakea akış çizgileri, mesafe halkaları, z≈14 gökada cephesi ve CMB kabuğu.
-- 5 ölçek: Yerel Grup · Yerel Levha · Laniakea · Kozmik ağ · Gözlenebilir evren.
+- **2MRS galaxies:** 43,482 real galaxies from the 2MASS Redshift Survey, placed in supergalactic coordinates from their redshifts.
+- **Local Group:** the Milky Way, Andromeda and Triangulum, plus the Magellanic Clouds, the Sagittarius, Sculptor and Fornax dwarfs, M32, M110, NGC 6822, IC 10, IC 1613, WLM and Andromeda II. Satellite labels appear only when you get close.
+- **Nearby groups:** M81, Centaurus A, Sculptor, the IC 342–Maffei group behind the Milky Way, NGC 1023, Sombrero, NGC 2997, Columba, the Leo II Cloud…
+- **Measured structures:** clusters, superclusters, walls and distant structures the catalog cannot see (Shapley, Vela, Boötes, the Sloan and BOSS Great Walls, the Huge-LQG, the Hercules–Corona Borealis Great Wall…) at their positions from the literature.
+- **Distant objects:** the Bullet Cluster, Pandora's Cluster, the Phoenix Cluster, El Gordo, the Spiderweb and SPT2349−56 protoclusters, the quasar J0313−1806, GN-z11, JADES-GS-z14-0 and MoM-z14.
+- **Voids:** the Local Void and its northern and southern branches, the Sculptor, Microscopium and Boötes voids, the Dipole Repeller, the KBC Void, the Eridanus Supervoid…
+- **Estimated web:** unmapped regions (including behind the plane of the Milky Way) are filled with a Voronoi foam model. The texture is realistic; the individual positions are invented.
+- **Zone of Avoidance**, Laniakea flow lines, distance rings, the z≈14 galaxy frontier and the CMB shell.
+- 5 scales: Local Group · Local Sheet · Laniakea · Cosmic web · Observable universe.
 
-## Kullanım
+## Usage
 
-- **Dil:** Uygulama İngilizce açılır; panelin üstündeki `EN | TR` düğmesiyle sayfa yenilenmeden Türkçeye geçilir. Seçim tarayıcıda hatırlanır; `?lang=tr` ya da `?lang=en` ile bağlantıda da belirtilebilir. Paylaşım bağlantıları iki dilde de aynıdır.
-- **Arama:** Paneldeki kutuya ya da `/` tuşuna basıp bir ad yazın. Türkçe karakter, büyük/küçük harf ve noktalama fark etmez ("basak", "momz").
-- **Rehberli tur:** "Turu başlat" (ya da `T`) sizi 12 durakta Samanyolu'ndan CMB'ye götürür.
-- **Bilgi kartı:** Etikete tıklayınca uzaklık, kırmızıya kayma, ışığın yolculuk süresi, gökteki konum (RA/Dec) ve galaktik koordinatlar görünür.
-- **Paylaşım:** Seçili nesne adres çubuğuna yazılır (`#nesne=koma-kumesi`); "Bağlantıyı kopyala" ile paylaşılabilir.
-- **Kısayollar:** `1`–`5` ölçekler, `Boşluk` dönüş, `L` etiketler, `Esc` kapat, `?` kısayol listesi.
-- **Görüntüyü kaydet:** O anki sahneyi PNG olarak indirir (etiketler dahil değil).
+- **Language:** the app opens in English; the `EN | TR` switch at the top of the panel changes to Turkish without reloading. The choice is remembered in the browser and can also be set in the link with `?lang=en` or `?lang=tr`. Share links are the same in both languages.
+- **Search:** type a name in the panel's search box, or press `/` first. Accents, case and punctuation are ignored (`momz` finds MoM-z14).
+- **Guided tour:** "Start tour" (or `T`) takes you from the Milky Way to the CMB in 12 stops.
+- **Info card:** click a label to see the distance, redshift, light travel time, sky position (RA/Dec) and galactic coordinates.
+- **Sharing:** the selected object is written to the address bar (`#nesne=koma-kumesi`) and can be shared with "Copy link".
+- **Shortcuts:** `1`–`5` scales, `Space` auto-rotate, `L` labels, `Esc` close, `?` shortcut list.
+- **Save image:** downloads the current scene as a PNG (labels not included).
 
-Kozmoloji: H₀ = 70 km/s/Mpc, Ωm = 0,3. Mesafeler eş hareketli (bugünkü) uzaklıktır.
+Cosmology: H₀ = 70 km/s/Mpc, Ωm = 0.3. Distances are comoving (present-day) distances.
 
-## Veri kaynağı ve atıf
+## Data source and credits
 
-Gökadalar şu katalogdan geliyor:
+The galaxies come from this catalog:
 
-> Huchra, J. P. ve diğ. 2012, *The 2MASS Redshift Survey — Description and Data Release*, ApJS 199, 26. http://tdc-www.harvard.edu/2mrs/
+> Huchra, J. P. et al. 2012, *The 2MASS Redshift Survey — Description and Data Release*, ApJS 199, 26. http://tdc-www.harvard.edu/2mrs/
 
-Depoda ve sayfada katalog verisi yok. Sayfa açılınca tarayıcı, [CDS VizieR](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26)'den (J/ApJS/199/26) 200 ≤ cz ≤ 40.000 km/s olan 43.482 gökadanın l, b, Kc ve cz sütunlarını indirir (~1,4 MB) ve konumları kendisi hesaplar. CDS'e ulaşılamazsa Harvard'daki VizieR aynası denenir; ikisi de yanıt vermezse model gökadalar olmadan açılır ve panelde "Yeniden dene" düğmesi çıkar. İnen veri yalnızca o tarayıcının önbelleğinde tutulur.
+Neither this repository nor the page contains any catalog data. When the page opens, the browser downloads the l, b, Kc and cz columns of the 43,482 galaxies with 200 ≤ cz ≤ 40,000 km/s from [CDS VizieR](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26) (J/ApJS/199/26, ~1.4 MB) and computes the positions itself. If CDS cannot be reached, the VizieR mirror at Harvard is tried; if neither answers, the model opens without the galaxies and the panel shows a "Try again" button. The downloaded data is kept only in that browser's cache.
 
-Bu çalışmada VizieR katalog erişim aracı kullanılmıştır (CDS, Strazburg, Fransa; doi:10.26093/cds/vizier).
+This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10.26093/cds/vizier).
