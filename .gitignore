@@ -4,3 +4,6 @@
 *.fits
 Thumbs.db
 .DS_Store
+
+dev/_check.mjs
+dev/_run.mjs
