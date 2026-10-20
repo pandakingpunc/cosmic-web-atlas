@@ -1,6 +1,6 @@
 // Static checks: i18n key coverage, KE/SC id references, STR key parity (en/tr).
 const fs = require('fs');
-const html = fs.readFileSync('kozmik-ag.html', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
 
 // 1) data-i18n* keys used in HTML
 const used = new Set();

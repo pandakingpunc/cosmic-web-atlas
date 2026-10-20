@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laniakea Süperkümesi 3D</title>
+<style>
+  html,body{margin:0;height:100%;background:#04050b;color:#cfd6ee;font:14px/1.4 system-ui,Segoe UI,sans-serif;overflow:hidden}
+  canvas{display:block}
+  #ui{position:fixed;top:14px;left:14px;max-width:270px;padding:12px 14px;background:rgba(10,12,24,.72);border:1px solid rgba(120,140,220,.25);border-radius:10px;backdrop-filter:blur(6px);z-index:5}
+  #ui h1{margin:0 0 4px;font-size:16px;color:#fff}
+  #ui p{margin:0 0 8px;font-size:12px;color:#97a2c8}
+  #ui label{display:block;margin:3px 0;cursor:pointer;user-select:none}
+  #hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-size:12px;color:#7b86ad;pointer-events:none;text-align:center}
+  .lbl{font-size:11px;color:#c9d3ff;text-shadow:0 0 4px #000,0 0 8px #000;white-space:nowrap;pointer-events:none;transform:translateY(-14px)}
+  .lbl.big{font-size:13px;color:#ffe9a8;font-weight:600}
+  .lbl.out{color:#7d86a8;font-style:italic}
+  .lbl.us{color:#7dffb0;font-weight:700;font-size:13px}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="ui">
+  <h1>Laniakea Süperkümesi</h1>
+  <p>Yaklaşık / şematik 3D model. ~100.000 gökada, çap ≈ 160 Mpc (~520 milyon ışık yılı). Konumlar kabaca, ölçek 1 birim = 1 Mpc.</p>
+  <label><input type="checkbox" id="tFlow" checked> Akış çizgileri (Büyük Çekici'ye)</label>
+  <label><input type="checkbox" id="tBound" checked> Süperküme sınırı</label>
+  <label><input type="checkbox" id="tLabels" checked> Etiketler</label>
+  <label><input type="checkbox" id="tRot" checked> Otomatik dönüş</label>
+</div>
+<div id="hint">Sürükle: döndür · Tekerlek: yakınlaş · Sağ tık: kaydır</div>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
+
+/* ---------- yardımcılar ---------- */
+let seed = 11;
+const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const gauss = () => { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); };
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+/* ---------- düğümler (kümeler), yaklaşık süpergalaktik Mpc ---------- */
+const N = {
+  mw:      {n:'Samanyolu / Yerel Grup', p:V(0,0,0),       m:0.35, cls:'us'},
+  virgo:   {n:'Başak Kümesi',           p:V(-4,16,-1),    m:1.0,  cls:'big'},
+  fornax:  {n:'Fırın Kümesi',           p:V(-10,-8,-12),  m:0.6},
+  antlia:  {n:'Antlia',                 p:V(-30,22,-3),   m:0.6},
+  cen:     {n:'Erboğa (Centaurus)',     p:V(-36,12,-5),   m:1.0,  cls:'big'},
+  hydra:   {n:'Hydra',                  p:V(-46,34,-2),   m:0.9,  cls:'big'},
+  ga:      {n:'Büyük Çekici (Norma)',   p:V(-58,24,-10),  m:2.0,  cls:'big'},
+  pavo:    {n:'Tavus-Hint',             p:V(-30,-40,-25), m:0.9,  cls:'big'},
+  perseus: {n:'Perseus-Balık',          p:V(50,-35,8),    m:1.1,  cls:'big'},
+  ursa:    {n:'Büyük Ayı Grubu',        p:V(4,22,16),     m:0.4},
+};
+const EDGES = [
+  ['mw','virgo'],['mw','fornax'],['mw','perseus'],['virgo','antlia'],['virgo','ursa'],
+  ['antlia','hydra'],['antlia','cen'],['cen','ga'],['hydra','ga'],['fornax','cen'],
+  ['fornax','pavo'],['pavo','ga'],['perseus','virgo'],['perseus','pavo'],
+];
+const OUTSIDE = [
+  {n:'Koma Kümesi (dışarıda)', p:V(0,95,14)},
+  {n:'Şapley Süperkümesi (dışarıda)', p:V(-165,62,6)},
+];
+const CENTER = V(-18,6,-3), RAD = V(85,75,55);   // süperküme "sınırı" elipsoidi
+
+/* ---------- sahne ---------- */
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x04050b, 0.0016);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.5, 3000);
+camera.position.set(110, -170, 120);
+camera.up.set(0,0,1);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+const labelR = new CSS2DRenderer();
+labelR.setSize(innerWidth, innerHeight);
+Object.assign(labelR.domElement.style, {position:'fixed', top:0, left:0, pointerEvents:'none'});
+document.body.appendChild(labelR.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(CENTER);
+controls.enableDamping = true;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.5;
+
+/* ---------- parlak nokta dokusu ---------- */
+function dotTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.25,'rgba(255,255,255,.55)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c);
+}
+const TEX = dotTex();
+
+/* ---------- gökada noktaları ---------- */
+const pos = [], col = [], siz = [];
+const warm = new THREE.Color(1.0, .82, .55), cool = new THREE.Color(.5, .68, 1.0);
+const nodeList = Object.values(N);
+function add(p, size) {
+  let d = 1e9; for (const nd of nodeList) d = Math.min(d, p.distanceTo(nd.p));
+  const t = Math.exp(-d / 9);
+  const c = cool.clone().lerp(warm, t).multiplyScalar(.55 + .45 * rnd());
+  pos.push(p.x, p.y, p.z); col.push(c.r, c.g, c.b); siz.push(size);
+}
+// filamentler
+for (const [a, b] of EDGES) {
+  const A = N[a].p, B = N[b].p, L = A.distanceTo(B);
+  const mid = A.clone().add(B).multiplyScalar(.5).add(V(gauss(), gauss(), gauss()).multiplyScalar(L * .08));
+  const cnt = Math.round(L * 28);
+  for (let i = 0; i < cnt; i++) {
+    const t = rnd(), u = 1 - t;
+    const p = A.clone().multiplyScalar(u*u).addScaledVector(mid, 2*u*t).addScaledVector(B, t*t);
+    const s = 1.1 + 0.8 * Math.abs(gauss());
+    p.add(V(gauss(), gauss(), gauss()).multiplyScalar(s));
+    add(p, 0.9 + rnd() * 1.1);
+  }
+}
+// küme halleri
+for (const nd of nodeList) {
+  const cnt = Math.round(1400 * nd.m), s = 1.4 + 1.8 * Math.sqrt(nd.m);
+  for (let i = 0; i < cnt; i++) add(nd.p.clone().add(V(gauss(), gauss(), gauss()).multiplyScalar(s)), 0.9 + rnd() * 1.4);
+}
+// dağınık alan gökadaları (elipsoid içinde, kenara doğru seyrek)
+for (let i = 0; i < 5000; i++) {
+  const d = V(gauss(), gauss(), gauss()).normalize().multiplyScalar(Math.cbrt(rnd()) * (rnd() < .5 ? 1 : .8));
+  add(CENTER.clone().add(d.multiply(RAD)), 0.7 + rnd() * .7);
+}
+// dış gökadalar (komşu süperkümeler, soluk)
+for (const o of OUTSIDE) for (let i = 0; i < 500; i++) add(o.p.clone().add(V(gauss(), gauss(), gauss()).multiplyScalar(8)), 0.9);
+
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+geo.setAttribute('size', new THREE.Float32BufferAttribute(siz, 1));
+const mat = new THREE.PointsMaterial({size: 2.0, map: TEX, vertexColors: true, transparent: true, opacity: .6,
+  depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true});
+scene.add(new THREE.Points(geo, mat));
+
+/* ---------- akış çizgileri (Büyük Çekici'ye doğru) ---------- */
+const attract = Object.values(N).map(nd => ({p: nd.p, w: nd === N.ga ? 5 : nd.m * .9}));
+function vel(p) {
+  const v = V(0,0,0);
+  for (const a of attract) { const d = a.p.clone().sub(p), r = d.length(); v.addScaledVector(d.normalize(), a.w / (r + 12)); }
+  return v.normalize();
+}
+const streams = [], segPos = [], segCol = [];
+for (let s = 0; s < 150; s++) {
+  const p = CENTER.clone().add(V(gauss(), gauss(), gauss()).normalize().multiplyScalar(.95 + .1 * rnd()).multiply(RAD));
+  const pts = [p.clone()];
+  for (let k = 0; k < 220 && p.distanceTo(N.ga.p) > 3; k++) { p.addScaledVector(vel(p), 1.1); pts.push(p.clone()); }
+  streams.push(pts);
+  for (let i = 1; i < pts.length; i++) {
+    const f = i / pts.length, b = .04 + .5 * f * f;
+    segPos.push(pts[i-1].x, pts[i-1].y, pts[i-1].z, pts[i].x, pts[i].y, pts[i].z);
+    segCol.push(.25*b, .5*b, 1*b, .25*b, .5*b, 1*b);
+  }
+}
+const fg = new THREE.BufferGeometry();
+fg.setAttribute('position', new THREE.Float32BufferAttribute(segPos, 3));
+fg.setAttribute('color', new THREE.Float32BufferAttribute(segCol, 3));
+const flowLines = new THREE.LineSegments(fg, new THREE.LineBasicMaterial({vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false}));
+scene.add(flowLines);
+// hareketli noktalar
+const dotPos = new Float32Array(streams.length * 3);
+const dotGeo = new THREE.BufferGeometry();
+dotGeo.setAttribute('position', new THREE.BufferAttribute(dotPos, 3));
+const dots = new THREE.Points(dotGeo, new THREE.PointsMaterial({size: 4, map: TEX, color: 0x9fd0ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+scene.add(dots);
+const phase = streams.map(() => rnd());
+
+/* ---------- sınır elipsoidi ---------- */
+const bound = new THREE.Mesh(new THREE.SphereGeometry(1, 36, 24),
+  new THREE.MeshBasicMaterial({color: 0x4a6bff, wireframe: true, transparent: true, opacity: .07, depthWrite: false}));
+bound.position.copy(CENTER); bound.scale.copy(RAD);
+scene.add(bound);
+
+/* ---------- işaretçiler ve etiketler ---------- */
+const labelGroup = new THREE.Group(); scene.add(labelGroup);
+function label(text, p, cls) {
+  const d = document.createElement('div'); d.className = 'lbl ' + (cls || ''); d.textContent = text;
+  const o = new CSS2DObject(d); o.position.copy(p); labelGroup.add(o);
+}
+for (const nd of nodeList) label(nd.n, nd.p, nd.cls);
+for (const o of OUTSIDE) label(o.n, o.p, 'out');
+const you = new THREE.Mesh(new THREE.SphereGeometry(1.1, 16, 12), new THREE.MeshBasicMaterial({color: 0x7dffb0}));
+scene.add(you);
+const ga = new THREE.Mesh(new THREE.SphereGeometry(1.8, 16, 12), new THREE.MeshBasicMaterial({color: 0xffc46b, transparent: true, opacity: .8}));
+ga.position.copy(N.ga.p); scene.add(ga);
+
+/* ---------- arayüz ---------- */
+const $ = id => document.getElementById(id);
+$('tFlow').onchange  = e => { flowLines.visible = dots.visible = e.target.checked; };
+$('tBound').onchange = e => { bound.visible = e.target.checked; };
+$('tLabels').onchange = e => { labelGroup.visible = e.target.checked; };
+$('tRot').onchange   = e => { controls.autoRotate = e.target.checked; };
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); labelR.setSize(innerWidth, innerHeight);
+});
+
+/* ---------- döngü ---------- */
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  for (let i = 0; i < streams.length; i++) {
+    phase[i] = (phase[i] + dt * .12) % 1;
+    const pts = streams[i], q = pts[Math.floor(phase[i] * (pts.length - 1))];
+    dotPos[i*3] = q.x; dotPos[i*3+1] = q.y; dotPos[i*3+2] = q.z;
+  }
+  dotGeo.attributes.position.needsUpdate = true;
+  ga.scale.setScalar(1 + .12 * Math.sin(clock.elapsedTime * 2));
+  controls.update();
+  renderer.render(scene, camera);
+  labelR.render(scene, camera);
+});
+</script>
+</body>
+</html>

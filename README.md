@@ -4,8 +4,8 @@ An interactive 3D model of the large-scale structure of the universe, from the L
 
 ## Files
 
-- `kozmik-ag.html`: the main model. Opens directly in the browser.
-- `index.html`: an early Laniakea Supercluster draft.
+- `index.html`: the main model. Opens directly in the browser, and it is what GitHub Pages serves for this repo.
+- `dev/laniakea-draft.html`: an early Laniakea Supercluster draft, kept for reference.
 
 ## What's inside
 
@@ -33,7 +33,7 @@ Cosmology: H₀ = 70 km/s/Mpc, Ωm = 0.3. Distances are comoving (present-day) d
 
 ## Development
 
-Everything lives in `kozmik-ag.html` — no build step. The `dev/` folder holds the data
+Everything lives in `index.html` — no build step. The `dev/` folder holds the data
 format reference (`SPEC.md`) and the test tooling (syntax, i18n parity, id references and
 a Node smoke test of the whole scene); see `dev/README.md`.
 

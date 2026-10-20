@@ -1,4 +1,4 @@
-// Smoke-test harness: runs kozmik-ag.html's module script in Node with stubs.
+// Smoke-test harness: runs index.html's module script in Node with stubs.
 import fs from 'fs';
 
 /* ---------- self-contained THREE stub (injected into the app source) ---------- */
@@ -123,7 +123,7 @@ globalThis.addEventListener = () => {};
 globalThis.matchMedia = () => ({ matches: false });
 const store = {};
 globalThis.localStorage = { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } };
-globalThis.location = { hash: '', search: '', pathname: '/kozmik-ag.html', href: 'http://localhost/kozmik-ag.html' };
+globalThis.location = { hash: '', search: '', pathname: '/index.html', href: 'http://localhost/index.html' };
 globalThis.history = { replaceState() {} };
 globalThis.fetch = () => Promise.reject(new Error('offline-stub'));
 

@@ -1,11 +1,11 @@
 # Data format — Cosmic Web Atlas
 
-Reference for contributing content to `kozmik-ag.html`, a single-file Three.js app
+Reference for contributing content to `index.html`, a single-file Three.js app
 ("Cosmic Web Atlas" / "Kozmik Ağ Atlası") that renders the large-scale structure of
 the universe in supergalactic coordinates (1 unit = 1 Mpc, comoving, H0 = 70, Om = 0.3).
 Bilingual UI: Turkish is the source language, English provided via `en:{n, t}` fields.
 
-New objects are added directly inside the module script of `kozmik-ag.html`
+New objects are added directly inside the module script of `index.html`
 (`L.push(...)`, `KE.push(...)`, `VOIDS.push(...)`, `SC.push(...)`, `farObj({...})`,
 tour stops inside the `TOUR` array). The identifiers below exist in that scope:
 `L`, `KE`, `VOIDS`, `SC`, `farObj`, `eq2sg(raDeg, decDeg, dMpc) -> Vector3`,
