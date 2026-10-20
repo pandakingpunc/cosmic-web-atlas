@@ -2,6 +2,8 @@
 
 An interactive 3D model of the large-scale structure of the universe, from the Local Group out to the cosmic microwave background (Three.js, a single HTML file).
 
+**[▶ Open the atlas](https://pandakingpunc.github.io/cosmic-web-atlas/)** (GitHub Pages) — or just open `index.html` in a browser.
+
 ## Files
 
 - `index.html`: the main model. Opens directly in the browser, and it is what GitHub Pages serves for this repo.
