@@ -92,11 +92,17 @@ farObj({n:'El Gordo · ACT-CL J0102−4915', ra:15.72, dec:-49.25, z:.87, shape:
 {q:'Sloan Büyük Duvarı', h:'Sloan Büyük Duvarı', d:550, t:'Türkçe durak metni.',
   en:{h:'Sloan Great Wall', t:'English stop text.'}},
 ```
+Stops go into `TOUR` (the main journey, ordered by distance) or `TOUR2` (the records tour:
+heaviest, largest, most powerful, most distant). `__cw.tourOk` / `__cw.tour2Ok` report whether
+every stop resolves, and `__cw.tour2Missing` lists the ones that do not.
 `q` MUST exactly equal the Turkish name of an existing label (matching is exact after
 lowercasing/Turkish-fold, so copy the string character-for-character). `d`: camera
 distance for the stop. Narrative: one paragraph, connects to the journey's arc.
 
 ## EXISTING IDS (do NOT redefine)
+The two lists below date from the first expansion; the atlas has grown since (208 ids,
+71 distant objects, 29 superclusters/walls, 21 voids). `node dev/_static.cjs` reports
+duplicate or dangling ids, and grepping `index.html` for `en:{n:'` lists every name.
 mw m31 m33 lmc smc sagdeg n6822 ic10 ic1613 wlm leo1d scds fds m32 m110 and2
 m81 cena scl canes leo1 m101 ursa virgo fornax erid dorado maffei ic342 maffei1
 maffei2 ngc1023 m104 n2997 col leo2 antlia hydra cen a3574 ciza norma pavo oph

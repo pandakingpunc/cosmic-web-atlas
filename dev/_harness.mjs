@@ -138,4 +138,5 @@ await import('./_run.mjs');
 for (let i = 0; i < 3; i++) globalThis.__animLoop && globalThis.__animLoop();
 const cw = globalThis.__cw;
 console.log('RUN OK · known ids:', Object.keys(cw.OBJ).length, '· known pts:', cw.known, '· guess pts:', cw.guess, '· haze pts:', cw.haze, '· nodes:', cw.nodes, '· edges:', cw.edges);
+console.log('labels:', cw.labels, '· far:', cw.far, '· sc:', cw.sc, '· voids:', cw.voids, '· tour ok:', cw.tourOk, '· records tour ok:', cw.tour2Ok, cw.tour2Missing.length ? '· missing: ' + cw.tour2Missing.join(', ') : '');
 console.log('DC(0.05) =', cw.DC(0.05).toFixed(1), 'Mpc · zOfD(DC(0.05)) =', cw.zOfD(cw.DC(0.05)).toFixed(4), '· TL(1090) =', cw.TL(1090).toFixed(5), 'Gyr');
