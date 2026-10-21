@@ -54,3 +54,11 @@ The galaxies come from this catalog:
 Neither this repository nor the page contains any catalog data. When the page opens, the browser downloads the l, b, Kc and cz columns of the 43,482 galaxies with 200 ≤ cz ≤ 40,000 km/s from [CDS VizieR](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26) (J/ApJS/199/26, ~1.4 MB) and computes the positions itself. If CDS cannot be reached, the VizieR mirror at Harvard is tried; if neither answers, the model opens without the galaxies and the panel shows a "Try again" button. The downloaded data is kept only in that browser's cache.
 
 This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10.26093/cds/vizier).
+
+## Citation and license
+
+If you use the atlas, please cite it: GitHub's "Cite this repository" button reads [`CITATION.cff`](CITATION.cff), and every release is archived on Zenodo with a DOI.
+
+> Karatum, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.0.0) [Computer software]. https://github.com/pandakingpunc/cosmic-web-atlas
+
+The code is released under the [MIT License](LICENSE). The 2MRS catalog is not part of this repository; cite Huchra et al. 2012 for it.

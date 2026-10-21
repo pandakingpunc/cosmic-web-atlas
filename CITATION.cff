@@ -1,0 +1,51 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "Cosmic Web Atlas"
+abstract: >-
+  An interactive 3D model of the large-scale structure of the universe, from the
+  Local Group out to the cosmic microwave background, in a single HTML file
+  (Three.js). It places the 43,482 galaxies of the 2MASS Redshift Survey in
+  supergalactic coordinates from their redshifts (downloaded at run time from
+  CDS VizieR), adds several hundred clusters, superclusters, walls, voids,
+  quasars and record-distance galaxies at their literature positions, and fills
+  unmapped regions with a Voronoi foam model. It includes guided tours, search,
+  an atlas index, a distance-measuring tool, a look-back-time shell and
+  English/Turkish interfaces. Cosmology: H0 = 70 km/s/Mpc, Omega_m = 0.3.
+authors:
+  - family-names: Karatum
+    given-names: Mustafa
+version: 1.0.0
+date-released: 2026-10-21
+license: MIT
+repository-code: "https://github.com/pandakingpunc/cosmic-web-atlas"
+url: "https://pandakingpunc.github.io/cosmic-web-atlas/"
+keywords:
+  - cosmology
+  - large-scale structure
+  - cosmic web
+  - Laniakea
+  - 2MASS Redshift Survey
+  - superclusters
+  - cosmic voids
+  - astronomy visualization
+  - science education
+  - Three.js
+references:
+  - type: article
+    title: "The 2MASS Redshift Survey—Description and Data Release"
+    authors:
+      - family-names: Huchra
+        given-names: John P.
+      - name: "et al."
+    journal: "The Astrophysical Journal Supplement Series"
+    volume: 199
+    issue: 2
+    start: 26
+    year: 2012
+    doi: "10.1088/0067-0049/199/2/26"
+  - type: database
+    title: "VizieR Online Data Catalog"
+    authors:
+      - name: "CDS, Strasbourg, France"
+    doi: "10.26093/cds/vizier"
