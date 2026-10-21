@@ -1,5 +1,7 @@
 # Cosmic Web Atlas
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23541415.svg)](https://doi.org/10.5281/zenodo.23541415)
+
 An interactive 3D model of the large-scale structure of the universe, from the Local Group out to the cosmic microwave background (Three.js, a single HTML file).
 
 **[▶ Open the atlas](https://pandakingpunc.github.io/cosmic-web-atlas/)** (GitHub Pages) — or just open `index.html` in a browser.
@@ -59,6 +61,8 @@ This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10
 
 If you use the atlas, please cite it: GitHub's "Cite this repository" button reads [`CITATION.cff`](CITATION.cff), and every release is archived on Zenodo with a DOI.
 
-> Karatum, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.0.0) [Computer software]. https://github.com/pandakingpunc/cosmic-web-atlas
+> Karatum, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.0.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
+
+The DOI above always resolves to the latest version; version 1.0.0 itself is [10.5281/zenodo.23541416](https://doi.org/10.5281/zenodo.23541416).
 
 The code is released under the [MIT License](LICENSE). The 2MRS catalog is not part of this repository; cite Huchra et al. 2012 for it.
