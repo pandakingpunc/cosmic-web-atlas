@@ -9,11 +9,14 @@ An interactive 3D model of the large-scale structure of the universe, from the L
 ## Files
 
 - `index.html`: the main model. Opens directly in the browser, and it is what GitHub Pages serves for this repo.
+- `data/desi-dr1.bin`: a 600,043-object sample of DESI Data Release 1 (3.6 MB), read by the page at start-up.
+- `dev/desi_build.py`: rebuilds that file from the DESI DR1 catalogs.
 - `dev/laniakea-draft.html`: an early Laniakea Supercluster draft, kept for reference.
 
 ## What's inside
 
 - **2MRS galaxies:** 43,482 real galaxies from the 2MASS Redshift Survey, placed in supergalactic coordinates from their redshifts.
+- **DESI DR1 galaxies and quasars:** 600,043 objects from the Dark Energy Spectroscopic Instrument's first data release, carrying the real web far beyond 2MRS: all 300,043 bright galaxies of the volume-limited BGS sample (z 0.1–0.4), plus random samples of 140,000 luminous red galaxies (z 0.4–1.1), 100,000 emission-line galaxies (z 0.8–1.6) and 60,000 quasars (z 0.8–3.5). They cover DESI's footprint only (two wedges, north and south of the Milky Way), and the `DESI DR1` layer switch turns them off.
 - **Local Group:** the Milky Way, Andromeda and Triangulum, plus satellites and dwarfs: the Magellanic Clouds, the Sagittarius, Sculptor, Fornax, Carina, Draco, Ursa Minor, Sextans, Canes Venatici II, Leo I & II and Leo T dwarfs, M32, M110, NGC 147, NGC 185, Andromeda I–III, NGC 6822, IC 10, IC 1613, WLM, the Tucana and Cetus dwarfs and the Antlia–Sextans Group, plus the ultra-faint and diffuse satellites Boötes I, Segue 1, Crater II and Antlia 2, Andromeda XIX, and the isolated Phoenix, Pegasus, Aquarius (DDO 210), SagDIG and Leo A dwarfs. Satellite labels appear only when you get close.
 - **Nearby galaxies & groups:** M81 (with the M82 starburst), Centaurus A (with the hidden Circinus), the Sculptor Group (NGC 253, NGC 55, NGC 300), the IC 342–Maffei group behind the Milky Way, NGC 1023, Sombrero, NGC 2997, Columba, the NGC 2403 group, M51, the megamaser M106, NGC 1316 (Fornax A), the Leo II Cloud, M83, NGC 4945, M94, the Black Eye, Sunflower, Fireworks, Whale and Needle galaxies, NGC 891, M77, NGC 1365, the Leo Triplet, NGC 7331; Virgo's giants M87, M49, M60, M84 and M100; and famous oddities farther out: Stephan's Quintet, the Antennae, Arp 220, NGC 6240, the Cartwheel, Hoag's Object, the Tadpole, the "dark-matter-free" NGC 1052-DF2, Malin 1 and IC 1101…
 - **Measured structures:** clusters, superclusters, walls and distant structures the catalog cannot see (Shapley, Vela, Boötes, the Quipu and Serpens–Corona Borealis superstructures mapped in 2025, the Centaurus Wall, the Perseus–Pegasus Filament, the Sloan and BOSS Great Walls, the Huge-LQG, the Hercules–Corona Borealis Great Wall…) at their positions from the literature.
@@ -53,16 +56,26 @@ The galaxies come from this catalog:
 
 > Huchra, J. P. et al. 2012, *The 2MASS Redshift Survey — Description and Data Release*, ApJS 199, 26. http://tdc-www.harvard.edu/2mrs/
 
-Neither this repository nor the page contains any catalog data. When the page opens, the browser downloads the l, b, Kc and cz columns of the 43,482 galaxies with 200 ≤ cz ≤ 40,000 km/s from [CDS VizieR](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26) (J/ApJS/199/26, ~1.4 MB) and computes the positions itself. If CDS cannot be reached, the VizieR mirror at Harvard is tried; if neither answers, the model opens without the galaxies and the panel shows a "Try again" button. The downloaded data is kept only in that browser's cache.
+The 2MRS catalog is not stored in this repository. When the page opens, the browser downloads the l, b, Kc and cz columns of the 43,482 galaxies with 200 ≤ cz ≤ 40,000 km/s from [CDS VizieR](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26) (J/ApJS/199/26, ~1.4 MB) and computes the positions itself. If CDS cannot be reached, the VizieR mirror at Harvard is tried; if neither answers, the model opens without the galaxies and the panel shows a "Try again" button. The downloaded data is kept only in that browser's cache.
 
 This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10.26093/cds/vizier).
+
+The deep galaxies and quasars come from DESI Data Release 1:
+
+> DESI Collaboration et al. 2026, *Data Release 1 of the Dark Energy Spectroscopic Instrument*, AJ 171, 285. https://data.desi.lbl.gov/doc/releases/dr1/
+
+DESI's data server does not allow cross-origin requests, so the page cannot download it the way it downloads 2MRS. Instead, `data/desi-dr1.bin` holds a sample made by `dev/desi_build.py` from the DR1 large-scale-structure clustering catalogs (LSS v1.5: `BGS_BRIGHT-21.5`, `LRG`, `ELG_LOPnotqso`, `QSO`; NGC + SGC). Changes made to the DESI data: only RA, Dec and redshift are kept; LRG, ELG and QSO are randomly subsampled with a fixed seed; values are rounded to 16 bits (RA ≈ 0.0055°, Dec ≈ 0.0027°, z ≈ 0.00005). DESI data are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+To rebuild the file, download the eight `*_clustering.dat.fits` files from `https://data.desi.lbl.gov/public/dr1/survey/catalogs/dr1/LSS/iron/LSScats/v1.5/` into one folder (about 650 MB) and run `python dev/desi_build.py <folder>` (numpy only).
+
+This research used data obtained with the Dark Energy Spectroscopic Instrument (DESI). DESI construction and operations is managed by the Lawrence Berkeley National Laboratory. This material is based upon work supported by the U.S. Department of Energy, Office of Science, Office of High-Energy Physics, under Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract. Additional support for DESI was provided by the U.S. National Science Foundation (NSF), Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF's National Optical-Infrared Astronomy Research Laboratory; the Science and Technology Facilities Council of the United Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies and Atomic Energy Commission (CEA); the National Council of Humanities, Science and Technology of Mexico (CONAHCYT); the Ministry of Science and Innovation of Spain (MICINN), and by the DESI Member Institutions: www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored to be permitted to conduct scientific research on I’oligam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the U.S. National Science Foundation, the U.S. Department of Energy, or any of the listed funding agencies.
 
 ## Citation and license
 
 If you use the atlas, please cite it: GitHub's "Cite this repository" button reads [`CITATION.cff`](CITATION.cff), and every release is archived on Zenodo with a DOI.
 
-> Karatum, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.0.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
+> Karatum, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.1.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
 
 The DOI above always resolves to the latest version; version 1.0.0 itself is [10.5281/zenodo.23541416](https://doi.org/10.5281/zenodo.23541416).
 
-The code is released under the [MIT License](LICENSE). The 2MRS catalog is not part of this repository; cite Huchra et al. 2012 for it.
+The code is released under the [MIT License](LICENSE). The 2MRS catalog is not part of this repository; cite Huchra et al. 2012 for it. The DESI sample in `data/` stays under CC BY 4.0; cite DESI Collaboration et al. 2026 for it.

@@ -225,7 +225,7 @@ kbd{font:500 10.5px/1 var(--f-data);border:1px solid var(--rule);border-bottom-w
     </div>
   </header>
   <div id="panelBody">
-    <p class="lede" data-i18n="lede">The nearby universe, drawn from 43 thousand real galaxies in the 2MASS Redshift Survey. Known clusters, walls and voids farther out sit at their measured positions. Everywhere not yet mapped, including the region behind the Milky Way, is filled with a guess that mimics the statistics of the real web.</p>
+    <p class="lede" data-i18n="lede">The nearby universe, drawn from 43 thousand real galaxies in the 2MASS Redshift Survey; deeper out, 600 thousand DESI galaxies and quasars trace the web out to z≈3.5. Known clusters, walls and voids farther out sit at their measured positions. Everywhere not yet mapped, including the region behind the Milky Way, is filled with a guess that mimics the statistics of the real web.</p>
 
     <div class="sec">
       <h3 data-i18n="hSearch">Search</h3>
@@ -268,6 +268,7 @@ kbd{font:500 10.5px/1 var(--f-data);border:1px solid var(--rule);border-bottom-w
       <h3 data-i18n="hColors">Colors</h3>
       <div class="legend">
         <div><i style="background:#fff0d6"></i><span><span data-i18n="lg1">2MRS galaxies</span><small data-i18n="lg1d">43,482 real galaxies; each dot is placed from its redshift.</small></span></div>
+        <div><i style="background:linear-gradient(90deg,#ffe2b4 25%,#ff9a66 25% 50%,#78c2ff 50% 75%,#c39cff 75%)"></i><span><span data-i18n="lg6">DESI DR1</span><small data-i18n="lg6d">Bright galaxies (cream), red galaxies (orange), star-forming galaxies (blue) and quasars (violet) out to z≈3.5.</small></span></div>
         <div><i style="background:var(--known)"></i><span><span data-i18n="lg2">Measured structures</span><small data-i18n="lg2d">Clusters, walls and distant structures the catalog cannot see: positions from the literature.</small></span></div>
         <div><i style="background:var(--guess)"></i><span><span data-i18n="lg3">Estimated web</span><small data-i18n="lg3d">Voronoi foam model. The texture is realistic; individual positions are invented.</small></span></div>
         <div><i style="background:none;border:1px solid var(--void)"></i><span data-i18n="lg4">Voids</span></div>
@@ -279,6 +280,7 @@ kbd{font:500 10.5px/1 var(--f-data);border:1px solid var(--rule);border-bottom-w
       <h3 data-i18n="hLayers">Layers</h3>
       <div class="layers">
         <label><input type="checkbox" id="tReal" checked> <span data-i18n="l_real">2MRS galaxies</span></label>
+        <label><input type="checkbox" id="tDesi" checked> <span data-i18n="l_desi">DESI DR1</span></label>
         <label><input type="checkbox" id="tKnown" checked> <span data-i18n="l_known">Measured structures</span></label>
         <label><input type="checkbox" id="tFar" checked> <span data-i18n="l_far">Distant objects</span></label>
         <label><input type="checkbox" id="tGuess" checked> <span data-i18n="l_guess">Estimated web</span></label>
@@ -291,6 +293,7 @@ kbd{font:500 10.5px/1 var(--f-data);border:1px solid var(--rule);border-bottom-w
         <label><input type="checkbox" id="tRot" checked> <span data-i18n="l_rot">Auto-rotate</span></label>
       </div>
       <p class="dataStatus" id="realStatus" role="status"></p>
+      <p class="dataStatus" id="desiStatus" role="status"></p>
       <label class="range" for="bright"><span data-i18n="bright">Brightness</span> <input type="range" id="bright" min="0.3" max="2.5" step="0.05" value="1"></label>
     </div>
     <p class="note" data-i18n="note1">Distances are present-day (comoving); H₀ = 70 km/s/Mpc, Ωm = 0.3. The color of distant galaxies shows their redshift. Click a label to open details.</p>
@@ -389,20 +392,23 @@ const STR = {
   en: {
     title: 'Cosmic Web Atlas', loading: 'Placing galaxies…', panelAria: 'Controls', langAria: 'Language', close: 'Close',
     eyebrow: 'Supergalactic coordinates · 1 unit = 1 Mpc', h1: 'Cosmic <em>Web</em>', hide: 'Hide', show: 'Show',
-    lede: 'The nearby universe, drawn from 43 thousand real galaxies in the 2MASS Redshift Survey. Known clusters, walls and voids farther out sit at their measured positions. Everywhere not yet mapped, including the region behind the Milky Way, is filled with a guess that mimics the statistics of the real web.',
+    lede: 'The nearby universe, drawn from 43 thousand real galaxies in the 2MASS Redshift Survey; deeper out, 600 thousand DESI galaxies and quasars trace the web out to z≈3.5. Known clusters, walls and voids farther out sit at their measured positions. Everywhere not yet mapped, including the region behind the Milky Way, is filled with a guess that mimics the statistics of the real web.',
     hSearch: 'Search', searchAria: 'Search structures', searchPh: 'Cluster, wall, void, supercluster…', resAria: 'Search results', none: 'No matching structure',
     hScale: 'Scale', scaleAria: 'Choose scale', sc0: 'Local Group', sc1: 'Local Sheet', sc2: 'Laniakea', sc3: 'Cosmic web', sc3u: '1.3 Gpc', sc4: 'Observable',
     hTour: 'Tour', tourStart: 'Start tour', tourStop: 'End tour', shot: 'Save image',
     hColors: 'Colors', lg1: '2MRS galaxies', lg1d: '43,482 real galaxies; each dot is placed from its redshift.',
+    lg6: 'DESI DR1', lg6d: 'Bright galaxies (cream), red galaxies (orange), star-forming galaxies (blue) and quasars (violet) out to z≈3.5.',
     lg2: 'Measured structures', lg2d: 'Clusters, walls and distant structures the catalog cannot see: positions from the literature.',
     lg3: 'Estimated web', lg3d: 'Voronoi foam model. The texture is realistic; individual positions are invented.',
     lg4: 'Voids', lg5: 'Zone of Avoidance', lg5d: "The Milky Way's dust hides what lies behind this wedge.",
-    hLayers: 'Layers', l_real: '2MRS galaxies', l_known: 'Measured structures', l_guess: 'Estimated web', l_voids: 'Voids', l_zoa: 'Zone of Avoidance',
+    hLayers: 'Layers', l_real: '2MRS galaxies', l_desi: 'DESI DR1', l_known: 'Measured structures', l_guess: 'Estimated web', l_voids: 'Voids', l_zoa: 'Zone of Avoidance',
     l_lani: 'Laniakea flow', l_rings: 'Distance rings', l_labels: 'Labels', l_rot: 'Auto-rotate', bright: 'Brightness', l_far: 'Distant objects',
     note1: 'Distances are present-day (comoving); H₀ = 70 km/s/Mpc, Ωm = 0.3. The color of distant galaxies shows their redshift. Click a label to open details.',
-    note2: 'Galaxy data: Huchra et al. 2012, ApJS 199, 26 (<a href="http://tdc-www.harvard.edu/2mrs/" style="color:var(--known)">2MASS Redshift Survey</a>). The catalog is not stored in this page: your browser downloads it from <a href="https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26" style="color:var(--known)">CDS VizieR</a> and computes the positions. This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10.26093/cds/vizier).',
+    note2: 'Galaxy data: Huchra et al. 2012, ApJS 199, 26 (<a href="http://tdc-www.harvard.edu/2mrs/" style="color:var(--known)">2MASS Redshift Survey</a>). The catalog is not stored in this page: your browser downloads it from <a href="https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26" style="color:var(--known)">CDS VizieR</a> and computes the positions. This work uses the VizieR catalogue access tool, CDS, Strasbourg, France (doi:10.26093/cds/vizier). Deep data: DESI Collaboration et al. 2026, AJ 171, 285 (<a href="https://data.desi.lbl.gov/doc/releases/dr1/" style="color:var(--known)">DESI Data Release 1</a>, <a href="https://creativecommons.org/licenses/by/4.0/" style="color:var(--known)">CC BY 4.0</a>). DESI\'s server does not let other sites read it, so a random sample of its large-scale-structure catalogs, with positions rounded, is stored next to this page. This research used data obtained with the Dark Energy Spectroscopic Instrument (DESI); the full acknowledgment is in the README.',
     real_loading: 'Downloading 2MRS galaxies from CDS VizieR…', real_ok: n => nf(n) + ' galaxies loaded from CDS VizieR.',
     real_fail: 'Could not reach CDS VizieR, so the 2MRS galaxies are not shown.', retry: 'Try again',
+    desi_loading: 'Loading the DESI DR1 sample…', desi_ok: n => nf(n) + ' DESI galaxies and quasars loaded.',
+    desi_fail: 'Could not load the DESI DR1 sample.',
     f_dist: 'Present distance', f_z: 'Redshift', f_lb: 'Light travel', f_age: 'Age of universe then', f_sky: 'Sky position', f_gal: 'Galactic l, b',
     lb: x => 'set out ' + x + ' ago', fly: 'Fly there', link: 'Copy link', copied: 'Copied', copyFail: "Couldn't copy",
     conf_ok: 'measured', conf_approx: 'approximate', conf_debated: 'debated',
@@ -430,20 +436,23 @@ const STR = {
   tr: {
     title: 'Kozmik Ağ Atlası', loading: 'Gökadalar yerleştiriliyor…', panelAria: 'Kontroller', langAria: 'Dil', close: 'Kapat',
     eyebrow: 'Süpergalaktik koordinatlar · 1 birim = 1 Mpc', h1: 'Kozmik <em>Ağ</em>', hide: 'Gizle', show: 'Aç',
-    lede: "Yakın evren, 2MASS Redshift Survey'deki 43 bin gerçek gökadayla çizildi. Daha uzaktaki bilinen kümeler, duvarlar ve boşluklar ölçülmüş konumlarında. Haritalanmamış her yer, Samanyolu'nun arkası dahil, gerçek ağın istatistiğine benzeyen bir tahminle dolduruldu.",
+    lede: "Yakın evren, 2MASS Redshift Survey'deki 43 bin gerçek gökadayla çizildi; daha derinde DESI'nin 600 bin gökada ve kuasarı ağı z≈3,5'e kadar izliyor. Daha uzaktaki bilinen kümeler, duvarlar ve boşluklar ölçülmüş konumlarında. Haritalanmamış her yer, Samanyolu'nun arkası dahil, gerçek ağın istatistiğine benzeyen bir tahminle dolduruldu.",
     hSearch: 'Ara', searchAria: 'Yapı ara', searchPh: 'Küme, duvar, boşluk, süperküme…', resAria: 'Arama sonuçları', none: 'Eşleşen yapı yok',
     hScale: 'Ölçek', scaleAria: 'Ölçek seç', sc0: 'Yerel Grup', sc1: 'Yerel Levha', sc2: 'Laniakea', sc3: 'Kozmik ağ', sc3u: '1,3 Gpc', sc4: 'Gözlenebilir',
     hTour: 'Gezinti', tourStart: 'Turu başlat', tourStop: 'Turu bitir', shot: 'Görüntüyü kaydet',
     hColors: 'Renkler', lg1: '2MRS gökadaları', lg1d: '43.482 gerçek gökada; her nokta kırmızıya kaymasından yerleştirildi.',
+    lg6: 'DESI DR1', lg6d: 'Parlak gökadalar (krem), kırmızı gökadalar (turuncu), yıldız oluşturan gökadalar (mavi) ve kuasarlar (mor); z≈3,5\'e kadar.',
     lg2: 'Ölçülmüş yapılar', lg2d: 'Kataloğun göremediği kümeler, duvarlar ve uzak yapılar: konumları literatürden.',
     lg3: 'Tahmini ağ', lg3d: 'Voronoi köpük modeli. Doku gerçekçi, tek tek konumlar uydurma.',
     lg4: 'Boşluklar', lg5: 'Kaçınma Bölgesi', lg5d: "Samanyolu'nun tozu bu kamanın arkasını gizliyor.",
-    hLayers: 'Katmanlar', l_real: '2MRS gökadaları', l_known: 'Ölçülmüş yapılar', l_guess: 'Tahmini ağ', l_voids: 'Boşluklar', l_zoa: 'Kaçınma bölgesi',
+    hLayers: 'Katmanlar', l_real: '2MRS gökadaları', l_desi: 'DESI DR1', l_known: 'Ölçülmüş yapılar', l_guess: 'Tahmini ağ', l_voids: 'Boşluklar', l_zoa: 'Kaçınma bölgesi',
     l_lani: 'Laniakea akışı', l_rings: 'Mesafe halkaları', l_labels: 'Etiketler', l_rot: 'Otomatik dönüş', bright: 'Parlaklık', l_far: 'Uzak nesneler',
     note1: 'Mesafeler bugünkü (eş hareketli) uzaklıktır; H₀ = 70 km/s/Mpc, Ωm = 0,3. Uzak gökadaların rengi kırmızıya kaymayı gösterir. Etiketlere tıklayınca ayrıntı açılır.',
-    note2: 'Gökada verisi: Huchra ve diğ. 2012, ApJS 199, 26 (<a href="http://tdc-www.harvard.edu/2mrs/" style="color:var(--known)">2MASS Redshift Survey</a>). Katalog bu sayfada saklanmaz: tarayıcınız onu <a href="https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26" style="color:var(--known)">CDS VizieR</a>\'den indirir ve konumları kendisi hesaplar. Bu çalışmada VizieR katalog erişim aracı kullanılmıştır (CDS, Strazburg, Fransa; doi:10.26093/cds/vizier).',
+    note2: 'Gökada verisi: Huchra ve diğ. 2012, ApJS 199, 26 (<a href="http://tdc-www.harvard.edu/2mrs/" style="color:var(--known)">2MASS Redshift Survey</a>). Katalog bu sayfada saklanmaz: tarayıcınız onu <a href="https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJS/199/26" style="color:var(--known)">CDS VizieR</a>\'den indirir ve konumları kendisi hesaplar. Bu çalışmada VizieR katalog erişim aracı kullanılmıştır (CDS, Strazburg, Fransa; doi:10.26093/cds/vizier). Derin veri: DESI Collaboration ve diğ. 2026, AJ 171, 285 (<a href="https://data.desi.lbl.gov/doc/releases/dr1/" style="color:var(--known)">DESI Data Release 1</a>, <a href="https://creativecommons.org/licenses/by/4.0/deed.tr" style="color:var(--known)">CC BY 4.0</a>). DESI\'nin sunucusu başka sitelerin veriyi okumasına izin vermediği için büyük ölçekli yapı kataloglarından rastgele seçilmiş, konumları yuvarlanmış bir örnek bu sayfanın yanında saklanır. Bu çalışmada Dark Energy Spectroscopic Instrument (DESI) ile elde edilen veriler kullanılmıştır; teşekkür metninin tamamı README\'de.',
     real_loading: '2MRS gökadaları CDS VizieR\'den indiriliyor…', real_ok: n => nf(n) + ' gökada CDS VizieR\'den yüklendi.',
     real_fail: 'CDS VizieR\'e ulaşılamadı; 2MRS gökadaları gösterilemiyor.', retry: 'Yeniden dene',
+    desi_loading: 'DESI DR1 örneği yükleniyor…', desi_ok: n => nf(n) + ' DESI gökadası ve kuasarı yüklendi.',
+    desi_fail: 'DESI DR1 örneği yüklenemedi.',
     f_dist: 'Bugünkü uzaklık', f_z: 'Kırmızıya kayma', f_lb: 'Işığın yolculuğu', f_age: 'Işık yola çıktığında evrenin yaşı', f_sky: 'Gökteki konum', f_gal: 'Galaktik l, b',
     lb: x => x + ' önce yola çıktı', fly: 'Oraya uç', link: 'Bağlantıyı kopyala', copied: 'Kopyalandı', copyFail: 'Kopyalanamadı',
     conf_ok: 'ölçülmüş', conf_approx: 'yaklaşık', conf_debated: 'tartışmalı',
@@ -1235,6 +1244,56 @@ async function load2MRS() {
   realStatus();
 }
 
+/* ================= DESI DR1: 600 bin gökada ve kuasar =================
+   DESI Collaboration ve diğ. 2026, AJ 171, 285 (CC BY 4.0). DESI'nin sunucusu başka sitelere (CORS)
+   izin vermediği için büyük ölçekli yapı kataloglarından (LSS v1.5 "clustering") seçilmiş örnek
+   data/desi-dr1.bin'de durur; dev/desi_build.py üretir. Konum: ekvatoral (RA, Dec) yönü × DC(z). */
+const desi = new Cloud();
+const DESI_URL = ['data/desi-dr1.bin', 'https://pandakingpunc.github.io/cosmic-web-atlas/data/desi-dr1.bin'];   // ikincisi: sayfa file:// ile açılınca
+const DESI_ZMAX = 3.5;
+// iz kodu sırasıyla: BGS parlak gökadalar, LRG kırmızı gökadalar, ELG yıldız oluşturanlar, QSO kuasarlar
+const DESI_T = [{c: [1, .89, .71], k: .34, s: 1.1}, {c: [1, .6, .4], k: .5, s: 2.4}, {c: [.47, .76, 1], k: .55, s: 2.8}, {c: [.76, .61, 1], k: .8, s: 4.5}];
+let desiState = 'loading';
+function desiStatus() {
+  const el = $('desiStatus'); if (!el) return;
+  el.textContent = desiState === 'ok' ? t('desi_ok', desi.n) : t(desiState === 'fail' ? 'desi_fail' : 'desi_loading');
+  if (desiState === 'fail') {
+    const b = document.createElement('button'); b.className = 'mini'; b.textContent = t('retry');
+    b.onclick = () => loadDESI(); el.append(' ', b);
+  }
+}
+async function fetchDESI() {
+  for (const url of DESI_URL) {
+    try { const res = await fetch(url); if (res.ok) return await res.arrayBuffer(); } catch (e) { /* sıradakini dene */ }
+  }
+  throw new Error('DESI');
+}
+function buildDESI(buf) {
+  const dv = new DataView(buf);
+  if (dv.getUint32(0) !== 0x44455349 || dv.getUint8(4) !== 1) throw new Error('format');   // 'DESI', sürüm 1
+  const p = new THREE.Vector3();
+  for (let i = 0, nt = dv.getUint8(5), o = 8; i < nt; i++) {
+    const T = DESI_T[dv.getUint8(o)], n = dv.getUint32(o + 4, true); o += 8;
+    const ra = new Uint16Array(buf, o, n), dec = new Uint16Array(buf, o + 2 * n, n), zq = new Uint16Array(buf, o + 4 * n, n); o += 6 * n;
+    for (let j = 0; j < n; j++) {
+      p.copy(eq2sg(ra[j] / 65535 * 360, dec[j] / 65535 * 180 - 90, DC(zq[j] / 65535 * DESI_ZMAX)));
+      desi.add(p, T.c[0] * T.k, T.c[1] * T.k, T.c[2] * T.k, T.s);
+    }
+  }
+}
+async function loadDESI() {
+  desiState = 'loading'; desiStatus();
+  try {
+    const buf = await fetchDESI();
+    desi.p = []; desi.c = []; desi.s = [];
+    buildDESI(buf);
+    if (!desi.n) throw new Error('empty');
+    const old = desiPts.geometry; desiPts.geometry = desi.geom(); old.dispose();
+    desiState = 'ok';
+  } catch (e) { desiState = 'fail'; }
+  desiStatus();
+}
+
 /* ================= Laniakea ================= */
 const LANI_C = P('norma').clone().multiplyScalar(.55).add(V(0, 4, 0)), LANI_R = V(84, 72, 56);
 const inLani = p => { const q = p.clone().sub(LANI_C).divide(LANI_R); return q.lengthSq() < 1; };
@@ -1604,10 +1663,13 @@ const guessMat = pointMat({minPx: 1.4, maxPx: 6, floor: .12, gain: .95});
 const hazeMat = pointMat({minPx: 1.3, maxPx: 5, floor: .25, gain: .55});
 const farMat = pointMat({minPx: 1.6, maxPx: 6, floor: .35, gain: 1});
 const realMat = pointMat({minPx: 1.6, maxPx: 7, floor: .42, gain: 2.1});
+const desiMat = pointMat({minPx: 1.4, maxPx: 6, floor: .3, gain: 1.1});
 const cmbMat = pointMat({minPx: 2.2, floor: .5, gain: .32, maxPx: 60});
 const knownPts = known.build(knownMat), guessPts = guess.build(guessMat), hazePts = haze.build(hazeMat), cmbPts = cmb.build(cmbMat);
 const realPts = real.build(realMat);   // boş başlar; gökadalar VizieR'den gelince doldurulur
 load2MRS();
+const desiPts = desi.build(desiMat);   // boş başlar; örnek data/desi-dr1.bin'den gelince doldurulur
+loadDESI();
 const farPts = farC.build(farMat);
 
 // biz: sabit piksel boyutlu yeşil işaret
@@ -1906,6 +1968,7 @@ const bindT = (id, fn) => $(id).addEventListener('change', e => fn(e.target.chec
 bindT('tKnown', v => { knownPts.visible = v; });
 bindT('tFar', v => { farPts.visible = layerOn.far = v; });
 bindT('tReal', v => { realPts.visible = v; });
+bindT('tDesi', v => { desiPts.visible = v; });
 bindT('tGuess', v => { guessPts.visible = v; hazePts.visible = v; });
 bindT('tVoids', v => { voidGroup.visible = layerOn.void = v; });
 bindT('tZoa', v => { zoaGroup.visible = layerOn.zoa = v; });
@@ -2299,7 +2362,7 @@ function applyLang() {
   if (!$('cat').hidden) catRender();
   if (tour) tourRender();
   if (!sList.hidden) sRender();
-  realStatus();
+  realStatus(); desiStatus();
   lastRead = '';
 }
 function setLang(l) {
@@ -2336,6 +2399,7 @@ renderer.setAnimationLoop(() => {
   // ölçeğe bağlı solma
   const dimFar = 1 - .88 * smooth(3000, 25000, cd);
   knownMat.uniforms.uBright.value = gBright * dimFar; farMat.uniforms.uBright.value = gBright; realMat.uniforms.uBright.value = gBright * dimFar;
+  desiMat.uniforms.uBright.value = gBright * (1 - .6 * smooth(6000, 25000, cd));
   guessMat.uniforms.uBright.value = gBright * dimFar;
   hazeMat.uniforms.uBright.value = gBright * smooth(3500, 12000, cd);
   cmbMat.uniforms.uBright.value = gBright * smooth(2500, 16000, cd);
@@ -2361,6 +2425,6 @@ renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
   labelR.render(scene, camera);
 });
-window.__cw = {OBJ, P, real, realPts, known: known.n, guess: guess.n, haze: haze.n, nodes: nodes.length, edges: ed.size, DC, zOfD, TL,
+window.__cw = {OBJ, P, real, realPts, desi, desiPts, known: known.n, guess: guess.n, haze: haze.n, nodes: nodes.length, edges: ed.size, DC, zOfD, TL,
   labels: labels.length, far: FAR.length, sc: SC.length, voids: VOIDS.length, tourOk: TOUR.every(s => findStop(s.q)), tour2Ok: TOUR2.every(s => findStop(s.q)), tour2Missing: TOUR2.filter(s => !findStop(s.q)).map(s => s.q)};
 </script>

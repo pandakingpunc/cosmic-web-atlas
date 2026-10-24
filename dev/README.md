@@ -5,6 +5,8 @@ tooling to run. This folder is only for people editing it.
 
 - `SPEC.md` — the data formats for adding objects (clusters, voids, superclusters,
   distant objects, tour stops) with the project's accuracy and bilingual-text rules.
+- `desi_build.py` — builds `../data/desi-dr1.bin` from the DESI DR1 LSS catalogs (see the
+  main README for the download list).
 - `_extract.js` — pulls the module script out of `index.html` into `_check.mjs`.
 - `_static.cjs` — static checks: i18n key parity (EN/TR), dangling filament/supercluster
   id references.

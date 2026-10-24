@@ -7,7 +7,8 @@ abstract: >-
   Local Group out to the cosmic microwave background, in a single HTML file
   (Three.js). It places the 43,482 galaxies of the 2MASS Redshift Survey in
   supergalactic coordinates from their redshifts (downloaded at run time from
-  CDS VizieR), adds several hundred clusters, superclusters, walls, voids,
+  CDS VizieR), a 600,043-object sample of DESI Data Release 1 galaxies and
+  quasars out to z = 3.5, adds several hundred clusters, superclusters, walls, voids,
   quasars and record-distance galaxies at their literature positions, and fills
   unmapped regions with a Voronoi foam model. It includes guided tours, search,
   an atlas index, a distance-measuring tool, a look-back-time shell and
@@ -15,8 +16,8 @@ abstract: >-
 authors:
   - family-names: Karatum
     given-names: Mustafa
-version: 1.0.0
-date-released: 2026-10-21
+version: 1.1.0
+date-released: 2026-10-24
 doi: 10.5281/zenodo.23541415
 identifiers:
   - type: doi
@@ -34,6 +35,7 @@ keywords:
   - cosmic web
   - Laniakea
   - 2MASS Redshift Survey
+  - DESI
   - superclusters
   - cosmic voids
   - astronomy visualization
@@ -52,6 +54,15 @@ references:
     start: 26
     year: 2012
     doi: "10.1088/0067-0049/199/2/26"
+  - type: article
+    title: "Data Release 1 of the Dark Energy Spectroscopic Instrument"
+    authors:
+      - name: "DESI Collaboration"
+    journal: "The Astronomical Journal"
+    volume: 171
+    start: 285
+    year: 2026
+    url: "https://ui.adsabs.harvard.edu/abs/2026AJ....171..285D/abstract"
   - type: database
     title: "VizieR Online Data Catalog"
     authors:

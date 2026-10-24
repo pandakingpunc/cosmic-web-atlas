@@ -1,7 +1,7 @@
 {
   "title": "Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe",
   "upload_type": "software",
-  "description": "<p>An interactive 3D model of the large-scale structure of the universe, from the Local Group out to the cosmic microwave background, in a single HTML file (Three.js). Live version: <a href=\"https://pandakingpunc.github.io/cosmic-web-atlas/\">pandakingpunc.github.io/cosmic-web-atlas</a>.</p><p>The atlas places the 43,482 galaxies of the 2MASS Redshift Survey (Huchra et al. 2012) in supergalactic coordinates from their redshifts; the catalog is not bundled, the browser downloads it from CDS VizieR at run time. Several hundred clusters, superclusters, walls, voids, quasars, protoclusters and record-distance galaxies are placed at their literature positions, and unmapped regions (including the Zone of Avoidance) are filled with a Voronoi foam model whose texture is realistic but whose individual positions are invented.</p><p>Features: five scales from the Local Group to the observable universe, a guided tour and a records tour, search, an atlas index filterable by kind, an info card (distance, redshift, light travel time, age of the universe then, recession velocity, sky and galactic coordinates, nearest neighbors), a distance-measuring tool, a look-back-time shell, Laniakea flow lines, the Local Group's motion relative to the CMB, and English/Turkish interfaces. Cosmology: H0 = 70 km/s/Mpc, Omega_m = 0.3; distances are comoving.</p>",
+  "description": "<p>An interactive 3D model of the large-scale structure of the universe, from the Local Group out to the cosmic microwave background, in a single HTML file (Three.js). Live version: <a href=\"https://pandakingpunc.github.io/cosmic-web-atlas/\">pandakingpunc.github.io/cosmic-web-atlas</a>.</p><p>The atlas places the 43,482 galaxies of the 2MASS Redshift Survey (Huchra et al. 2012) in supergalactic coordinates from their redshifts; the catalog is not bundled, the browser downloads it from CDS VizieR at run time. A 600,043-object sample of DESI Data Release 1 (DESI Collaboration et al. 2026; bright, luminous red and emission-line galaxies and quasars out to z = 3.5) is bundled under CC BY 4.0 and extends the real web into the deep universe. Several hundred clusters, superclusters, walls, voids, quasars, protoclusters and record-distance galaxies are placed at their literature positions, and unmapped regions (including the Zone of Avoidance) are filled with a Voronoi foam model whose texture is realistic but whose individual positions are invented.</p><p>Features: five scales from the Local Group to the observable universe, a guided tour and a records tour, search, an atlas index filterable by kind, an info card (distance, redshift, light travel time, age of the universe then, recession velocity, sky and galactic coordinates, nearest neighbors), a distance-measuring tool, a look-back-time shell, Laniakea flow lines, the Local Group's motion relative to the CMB, and English/Turkish interfaces. Cosmology: H0 = 70 km/s/Mpc, Omega_m = 0.3; distances are comoving.</p>",
   "creators": [
     {
       "name": "Karatum, Mustafa"
@@ -16,6 +16,7 @@
     "cosmic web",
     "Laniakea",
     "2MASS Redshift Survey",
+    "DESI",
     "superclusters",
     "cosmic voids",
     "astronomy visualization",
@@ -33,6 +34,12 @@
       "relation": "references",
       "resource_type": "publication-article",
       "scheme": "doi"
+    },
+    {
+      "identifier": "https://ui.adsabs.harvard.edu/abs/2026AJ....171..285D/abstract",
+      "relation": "references",
+      "resource_type": "publication-article",
+      "scheme": "url"
     },
     {
       "identifier": "10.26093/cds/vizier",
