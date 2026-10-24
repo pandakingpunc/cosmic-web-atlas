@@ -26,6 +26,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23541416
     description: "Version 1.0.0"
+  - type: doi
+    value: 10.5281/zenodo.23611209
+    description: "Version 1.1.0"
 license: MIT
 repository-code: "https://github.com/pandakingpunc/cosmic-web-atlas"
 url: "https://pandakingpunc.github.io/cosmic-web-atlas/"
