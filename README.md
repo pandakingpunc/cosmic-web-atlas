@@ -74,7 +74,7 @@ This research used data obtained with the Dark Energy Spectroscopic Instrument (
 
 If you use the atlas, please cite it: GitHub's "Cite this repository" button reads [`CITATION.cff`](CITATION.cff), and every release is archived on Zenodo with a DOI.
 
-> Karatüm, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.1.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
+> Karatüm, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.1.1) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
 
 The DOI above always resolves to the latest version; version 1.1.0 itself is [10.5281/zenodo.23611209](https://doi.org/10.5281/zenodo.23611209) and version 1.0.0 is [10.5281/zenodo.23541416](https://doi.org/10.5281/zenodo.23541416).
 

@@ -17,8 +17,8 @@ authors:
   - family-names: Karatüm
     given-names: Mustafa
     orcid: "https://orcid.org/0009-0006-7053-2872"
-version: 1.1.0
-date-released: 2026-10-24
+version: 1.1.1
+date-released: 2026-11-14
 doi: 10.5281/zenodo.23541415
 identifiers:
   - type: doi
