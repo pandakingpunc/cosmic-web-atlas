@@ -14,8 +14,9 @@ abstract: >-
   an atlas index, a distance-measuring tool, a look-back-time shell and
   English/Turkish interfaces. Cosmology: H0 = 70 km/s/Mpc, Omega_m = 0.3.
 authors:
-  - family-names: Karatum
+  - family-names: Karatüm
     given-names: Mustafa
+    orcid: "https://orcid.org/0009-0006-7053-2872"
 version: 1.1.0
 date-released: 2026-10-24
 doi: 10.5281/zenodo.23541415

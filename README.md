@@ -22,7 +22,7 @@ An interactive 3D model of the large-scale structure of the universe, from the L
 - **Measured structures:** clusters, superclusters, walls and distant structures the catalog cannot see (Shapley, Vela, Boötes, the Quipu and Serpens–Corona Borealis superstructures mapped in 2025, the Centaurus Wall, the Perseus–Pegasus Filament, the Sloan and BOSS Great Walls, the Huge-LQG, the Hercules–Corona Borealis Great Wall…) at their positions from the literature.
 - **More superclusters and voids:** the Phoenix, Columba, Pegasus, Sextans, Aquarius and Capricornus superclusters with their Abell member clusters, and the SSRS2 voids (Fornax, Cetus, Aquarius, nearby Eridanus, Piscis Austrinus) plus the Pegasus Void.
 - **Distant objects:** the Bullet Cluster, Pandora's Cluster, the Phoenix Cluster, El Gordo and the Sausage; the lensing clusters Abell 2218, Abell 370, SMACS J0723.3−7327 (JWST's first deep field), MACS J0416.1−2403, MACS J1149.6+2223 (supernova Refsdal), RX J1347.5−1145 and MS 0735.6+7421; the Spiderweb, SPT2349−56, MAGAZ3NE and TN 1338 protoclusters; the quasars J0313−1806, ULAS J1342+0928 and Pōniuā'ena; the lensed star Earendel; the record clusters MACS J0717.5+3745, the Train Wreck (Abell 520), CL 0024+17, the Baby Bullet, Abell 2163, Abell 1835, SPT-CL J2106−5844, IDCS J1426.5+3508, JKCS 041 and XLSSC 122; the King Ghidorah Supercluster and the CL J1001+0220, z66OD and A2744-z7p9OD protoclusters; the quasars 3C 273, 3C 48, TON 618, APM 08279+5255, the Twin Quasar, the Einstein Cross, the Cloverleaf, J0529−4351, SDSS J0100+2802 and UHZ1; WISE W2246−0526, the Sunburst Arc, CR7, A1689-zD1, EGSY8p7, GRB 090423, GRB 090429B, the Cosmic Gems Arc, Maisie's Galaxy and JADES-GS-z13-0; and the frontier galaxies GN-z11, MACS0647−JD, GLASS-z12, HD1 (debated), JADES-GS-z14-0 and MoM-z14.
-- **Voids:** the Local Void and its northern and southern branches, the Sculptor, Microscopium, Boötes, Canes Major, Capricornus, Columba, Taurus and Hercules voids, the Dipole Repeller, the KBC Void, the Eridanus Supervoid…
+- **Voids:** the Local Void and its northern and southern branches, the Sculptor, Microscopium, Boötes, Canis Major, Capricornus, Columba, Taurus and Hercules voids, the Dipole Repeller, the KBC Void, the Eridanus Supervoid…
 - **Estimated web:** unmapped regions (including behind the plane of the Milky Way) are filled with a Voronoi foam model. The texture is realistic; the individual positions are invented.
 - **Zone of Avoidance**, Laniakea flow lines, distance rings, supergalactic axis markers, the z≈14 galaxy frontier and the CMB shell.
 - 5 scales: Local Group · Local Sheet · Laniakea · Cosmic web · Observable universe.
@@ -74,7 +74,7 @@ This research used data obtained with the Dark Energy Spectroscopic Instrument (
 
 If you use the atlas, please cite it: GitHub's "Cite this repository" button reads [`CITATION.cff`](CITATION.cff), and every release is archived on Zenodo with a DOI.
 
-> Karatum, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.1.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
+> Karatüm, M. (2026). *Cosmic Web Atlas: an interactive 3D model of the large-scale structure of the universe* (Version 1.1.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23541415
 
 The DOI above always resolves to the latest version; version 1.1.0 itself is [10.5281/zenodo.23611209](https://doi.org/10.5281/zenodo.23611209) and version 1.0.0 is [10.5281/zenodo.23541416](https://doi.org/10.5281/zenodo.23541416).
 

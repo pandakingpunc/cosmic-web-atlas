@@ -2,6 +2,8 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://vizier.cds.unistra.fr https://vizier.cfa.harvard.edu https://pandakingpunc.github.io; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Cosmic Web Atlas</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -373,7 +375,8 @@ kbd{font:500 10.5px/1 var(--f-data);border:1px solid var(--rule);border-bottom-w
 <div id="hint" data-i18n="hint">drag: rotate · wheel: zoom · right-click: pan · click a label: details · ? shortcuts</div>
 
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"},
+"integrity":{"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js":"sha384-61S/Nu32S3E5+n+KpCOTb2eRYps6fVKm+9Gz1QBvSePFthb46f063Aa/qe/lykFZ","https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js":"sha384-qlO/ZugKPxAQUAvTlQoo0QECzxJIJySZmCF/DHdb2Xn/hHndFwX/vfUAC9Hbk6LP","https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js":"sha384-oxPlnJSeUCYU9W3RMQswb4S/vFd4Bhxuy1Ffx0V2KJakWeb6n1gaqUtSE9Ic/F72"}}
 </script>
 <script type="module">
 import * as THREE from 'three';
@@ -1038,7 +1041,7 @@ const VOIDS = [
 // Tully / Cosmicflows boşluk kozmografisinden ek boşluklar (konum ve yarıçap kabaca)
 VOIDS.push({n:'Büyük Köpek Boşluğu', c:eq2sg(100, -30, 100), r:45, lv:'web', conf:'approx',
   t:'Tully ekibinin Cosmicflows boşluk haritalarında Büyük Köpek yönünde işaretlenen seyrek hacim. Önünde yerel Kılıçbalığı–Güvercin grupları, arkasında Horologium–Reticulum duvarı (Quipu\'nun güney kolu) durur. Sınırları kabaca çizildi.',
-  en:{n:'Canes Major Void', t:'A sparse volume marked in the Canes Major direction in the Cosmicflows void maps of Tully\'s team. The local Dorado–Columba groups lie in front of it and the Horologium–Reticulum wall (Quipu\'s southern arm) behind it. Its boundaries are drawn only roughly.'}});
+  en:{n:'Canis Major Void', t:'A sparse volume marked in the Canis Major direction in the Cosmicflows void maps of Tully\'s team. The local Dorado–Columba groups lie in front of it and the Horologium–Reticulum wall (Quipu\'s southern arm) behind it. Its boundaries are drawn only roughly.'}});
 VOIDS.push({n:'Oğlak Boşluğu', c:eq2sg(310, -15, 80), r:40, lv:'web', conf:'approx',
   t:'Yerel Boşluk\'un güneyinde, Oğlak yönündeki seyrek bölge; bir yanında Laniakea\'nın Tavus–Hintli kolu, öte yanında Balık–Balina duvarına uzanan taraflar var. Samanyolu düzlemine yakın kaldığı için sınırları belirsiz.',
   en:{n:'Capricornus Void', t:'A sparse region in the Capricornus direction, south of the Local Void; it is flanked by Laniakea\'s Pavo–Indus arm on one side and reaches toward the Pisces–Cetus wall on the other. Its boundaries are uncertain because it lies close to the Milky Way plane.'}});
@@ -1195,15 +1198,33 @@ function realStatus() {
     b.onclick = () => load2MRS(); el.append(' ', b);
   }
 }
+const MIN_2MRS = 40000;   // tam tablo 43.482 satır; bundan azı hata sayfası ya da yarım tablo
+// yanıtı doğrular: build2MRS ile gerçekten çözümlenir; geçersizse real boşaltılır
+function valid2MRS(txt) {
+  real.p = []; real.c = []; real.s = [];
+  try { build2MRS(txt); } catch (e) { real.p = []; real.c = []; real.s = []; return false; }
+  if (real.n >= MIN_2MRS) return true;
+  real.p = []; real.c = []; real.s = [];
+  return false;
+}
 async function fetch2MRS() {
   let cache = null;
-  try { cache = await caches.open('kozmik-2mrs-v1'); const hit = await cache.match(VIZIER[0] + Q2MRS); if (hit) return await hit.text(); } catch (e) {}
+  try {
+    cache = await caches.open('kozmik-2mrs-v1');
+    const hit = await cache.match(VIZIER[0] + Q2MRS);
+    if (hit) {
+      const txt = await hit.text();
+      if (valid2MRS(txt)) return txt;
+      await cache.delete(VIZIER[0] + Q2MRS);   // bozuk önbellek girdisi: sil, ağa düş
+    }
+  } catch (e) {}
   for (const host of VIZIER) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 30000);
     try {
       const res = await fetch(host + Q2MRS, {signal: ctl.signal});
       if (!res.ok) continue;
       const txt = await res.text();
+      if (!valid2MRS(txt)) continue;   // geçersiz gövde: sıradaki ayna, önbelleğe yazma
       try { if (cache) await cache.put(VIZIER[0] + Q2MRS, new Response(txt, {headers: {'Content-Type': 'text/plain'}})); } catch (e) {}
       return txt;
     } catch (e) { /* sıradaki aynayı dene */ } finally { clearTimeout(timer); }
@@ -1231,16 +1252,18 @@ function build2MRS(txt) {
     real.add(p, k, k * (.68 + .22 * t), k * (.42 + .4 * t * t), .22 + .4 * t);
   }
 }
+let busy2MRS = false;   // yeniden giriş koruması
 async function load2MRS() {
+  if (busy2MRS) return;
+  busy2MRS = true;
   realState = 'loading'; realStatus();
   try {
-    const txt = await fetch2MRS();
-    real.p = []; real.c = []; real.s = [];
-    build2MRS(txt);
-    if (!real.n) throw new Error('empty');
+    await fetch2MRS();   // başarılıysa real zaten doğrulanmış ve dolu
+    if (real.n < MIN_2MRS) throw new Error('empty');
     const old = realPts.geometry; realPts.geometry = real.geom(); old.dispose();
     realState = 'ok';
-  } catch (e) { realState = 'fail'; }
+  } catch (e) { real.p = []; real.c = []; real.s = []; realState = 'fail'; }
+  finally { busy2MRS = false; }
   realStatus();
 }
 
@@ -1281,7 +1304,10 @@ function buildDESI(buf) {
     }
   }
 }
+let busyDESI = false;   // yeniden giriş koruması
 async function loadDESI() {
+  if (busyDESI) return;
+  busyDESI = true;
   desiState = 'loading'; desiStatus();
   try {
     const buf = await fetchDESI();
@@ -1291,6 +1317,7 @@ async function loadDESI() {
     const old = desiPts.geometry; desiPts.geometry = desi.geom(); old.dispose();
     desiState = 'ok';
   } catch (e) { desiState = 'fail'; }
+  finally { busyDESI = false; }
   desiStatus();
 }
 
@@ -2006,7 +2033,7 @@ function resize() {
 addEventListener('resize', resize); resize();
 
 /* ================= arama ================= */
-const fold = s => (s || '').replace(/[ıİşŞğĞüÜöÖçÇâÂîÎûÛôÔ]/g, c => ({'ı':'i','İ':'i','ş':'s','Ş':'s','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c','â':'a','Â':'a','î':'i','Î':'i','û':'u','Û':'u','ô':'o','Ô':'o'}[c])).toLowerCase();
+const fold = s => (s || '').replace(/[ıİşŞğĞüÜöÖçÇâÂîÎûÛôÔ]/g, c => ({'ı':'i','İ':'i','ş':'s','Ş':'s','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c','â':'a','Â':'a','î':'i','Î':'i','û':'u','Û':'u','ô':'o','Ô':'o'}[c])).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();   // bileşik işaretler (ō, ā…) atılır
 const slug = s => fold(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const sBox = $('searchBox'), sList = $('searchList');
 let sRes = [], sIdx = -1;
@@ -2425,6 +2452,6 @@ renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
   labelR.render(scene, camera);
 });
-window.__cw = {OBJ, P, real, realPts, desi, desiPts, known: known.n, guess: guess.n, haze: haze.n, nodes: nodes.length, edges: ed.size, DC, zOfD, TL,
+window.__cw = {OBJ, P, real, realPts, desi, desiPts, load2MRS, known: known.n, guess: guess.n, haze: haze.n, nodes: nodes.length, edges: ed.size, DC, zOfD, TL,
   labels: labels.length, far: FAR.length, sc: SC.length, voids: VOIDS.length, tourOk: TOUR.every(s => findStop(s.q)), tour2Ok: TOUR2.every(s => findStop(s.q)), tour2Missing: TOUR2.filter(s => !findStop(s.q)).map(s => s.q)};
 </script>

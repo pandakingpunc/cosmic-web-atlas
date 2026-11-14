@@ -140,3 +140,41 @@ const cw = globalThis.__cw;
 console.log('RUN OK · known ids:', Object.keys(cw.OBJ).length, '· known pts:', cw.known, '· guess pts:', cw.guess, '· haze pts:', cw.haze, '· nodes:', cw.nodes, '· edges:', cw.edges);
 console.log('labels:', cw.labels, '· far:', cw.far, '· sc:', cw.sc, '· voids:', cw.voids, '· tour ok:', cw.tourOk, '· records tour ok:', cw.tour2Ok, cw.tour2Missing.length ? '· missing: ' + cw.tour2Missing.join(', ') : '');
 console.log('DC(0.05) =', cw.DC(0.05).toFixed(1), 'Mpc · zOfD(DC(0.05)) =', cw.zOfD(cw.DC(0.05)).toFixed(4), '· TL(1090) =', cw.TL(1090).toFixed(5), 'Gyr');
+
+/* ---------- 2MRS önbellek senaryoları (sahte caches + fetch) ---------- */
+{
+  const must = (c, m) => { if (!c) throw new Error('2MRS test başarısız: ' + m); };
+  const store2 = new Map(), log = {put: 0, del: 0};
+  globalThis.caches = { open: async () => ({
+    match: async k => store2.has(k) ? new Response(store2.get(k)) : undefined,
+    put: async (k, r) => { log.put++; store2.set(k, await r.text()); },
+    delete: async k => { log.del++; return store2.delete(k); },
+  }) };
+  const KEY = 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=J/ApJS/199/26/table3&-out.max=unlimited&-out=GLON,GLAT,Kcmag,cz&cz=200..40000&-out.form=%7C';
+  const BAD = '<html><body>VizieR error</body></html>';
+  const rows = ['GLON|GLAT|Kcmag|cz', 'deg|deg|mag|km/s', '------|-----|-----|-----'];
+  for (let i = 0; i < 40500; i++) rows.push(' ' + (i % 360 + .27151).toFixed(5) + '| ' + ((i % 150) - 75 + .34017).toFixed(5) + '| 4.471|  ' + (563 + (i % 9000)));
+  const GOOD = rows.join('\n');
+  await new Promise(r => setTimeout(r, 20));   // açılışta başlayan yükleme bitsin
+
+  // (i) bozuk önbellek + geçerli ağ
+  store2.set(KEY, BAD); log.put = log.del = 0;
+  globalThis.fetch = async () => ({ok: true, text: async () => GOOD});
+  await cw.load2MRS();
+  must(cw.real.n >= 40000, '(i) real.n=' + cw.real.n);
+  must(log.del === 1, '(i) bozuk girdi silinmedi');
+  must(store2.get(KEY) === GOOD, '(i) önbellekte geçerli gövde yok');
+  console.log('2MRS (i) bozuk önbellek -> ağdan düzeldi: n=' + cw.real.n + ' · silinen=' + log.del + ' · yazılan=' + log.put);
+
+  // (ii) boş önbellek + iki aynada da bozuk gövde
+  store2.clear(); log.put = log.del = 0;
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return {ok: true, text: async () => BAD}; };
+  await cw.load2MRS();
+  must(cw.real.n === 0, '(ii) real dolu kaldı: ' + cw.real.n);
+  must(log.put === 0 && store2.size === 0, '(ii) önbelleğe bozuk yazıldı');
+  must(calls === 2, '(ii) iki ayna denenmedi: ' + calls);
+  must(!/loaded/.test(globalThis.__els.realStatus.textContent), '(ii) durum ok görünüyor');
+  console.log('2MRS (ii) iki ayna da bozuk -> fail: n=' + cw.real.n + ' · ayna denemesi=' + calls + ' · yazılan=' + log.put);
+  delete globalThis.caches;
+}
